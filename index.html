@@ -3,8 +3,29 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>PDF Editor and Converter: Merge, Split, Sign &amp; Convert PDFs | ASC Software</title>
-<meta name="description" content="Merge, split, rotate, sign, edit, compress and convert PDFs in your browser. PDF to Word is free. No account needed.">
+<title>Free PDF Editor Online: Edit, Merge, Split, Sign | ASC</title>
+<meta name="description" content="Edit, merge, split, rotate, sign, compress and convert PDFs online for free. PDF to Word included. No sign-up and no watermark, right in your browser.">
+<meta name="robots" content="index,follow,max-image-preview:large">
+<link rel="canonical" href="https://ascpdfeditor.vercel.app/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="ASC Software">
+<meta property="og:title" content="Free PDF Editor Online: Edit, Merge, Split, Sign">
+<meta property="og:description" content="Edit, merge, split, sign and convert PDFs in your browser. PDF to Word is free. No sign-up, no watermark.">
+<meta property="og:url" content="https://ascpdfeditor.vercel.app/">
+<meta property="og:image" content="https://ascpdfeditor.vercel.app/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="ASC Software free PDF editor and converter">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Free PDF Editor Online: Edit, Merge, Split, Sign">
+<meta name="twitter:description" content="Edit, merge, split, sign and convert PDFs in your browser. PDF to Word is free.">
+<meta name="twitter:image" content="https://ascpdfeditor.vercel.app/og-image.png">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@graph":[
+{"@type":"Organization","@id":"https://ascsoftware.co.za/#org","name":"ASC Software","alternateName":"Atlas Scale Collective","url":"https://ascsoftware.co.za/"},
+{"@type":"WebApplication","@id":"https://ascpdfeditor.vercel.app/#app","name":"ASC PDF Editor and Converter","url":"https://ascpdfeditor.vercel.app/","description":"Free online PDF editor. Edit, merge, split, rotate, sign, compress and convert PDFs in your browser.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","inLanguage":"en","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"ZAR"},"featureList":["Edit PDF: add text, highlights, whiteout and images","Merge PDF files","Split PDF and extract pages","Rotate and reorder pages","Sign PDF","Compress PDF","PDF to Word","PDF to JPG and PNG","JPG to PDF"],"publisher":{"@id":"https://ascsoftware.co.za/#org"}}
+]}
+</script>
 <meta name="theme-color" content="#f5f8f6">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='31' fill='%230b2f23'/%3E%3Ccircle cx='32' cy='32' r='27' fill='none' stroke='%23e6d6a8' stroke-width='2'/%3E%3Ctext x='32' y='39' text-anchor='middle' font-family='Georgia,serif' font-weight='700' font-size='20' fill='%23f3e9c6'%3EASC%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
@@ -83,6 +104,7 @@ body.dropping .drop,body.dropping .workspace{background:var(--accent-soft);borde
 .faq summary{cursor:pointer;font-weight:600}
 .faq p{margin:8px 0 2px;color:var(--muted);max-width:70ch}
 footer{margin-top:40px;color:var(--muted);font-size:13px}
+footer a{color:inherit}
 .banner{background:#fbeceb;border:1px solid #e6b4b0;color:#6b1a15;padding:10px 14px;border-radius:10px;margin-bottom:14px}
 /* toast */
 .toast{position:fixed;left:50%;bottom:max(18px,env(safe-area-inset-bottom));transform:translateX(-50%);background:#14221b;color:#fff;border-radius:10px;padding:10px 14px;display:flex;gap:12px;align-items:center;box-shadow:0 6px 24px rgba(0,0,0,.25);z-index:200;max-width:min(92vw,560px);font-size:14px}
@@ -220,6 +242,7 @@ a.btn{text-decoration:none}
   </symbol>
 </svg>
 <a class="skip" href="#tool">Skip to the PDF tool</a>
+<noscript><p style="margin:0;padding:10px 16px;background:#fff3cd;color:#4a3b00;text-align:center">This PDF editor needs JavaScript. Turn it on in your browser to edit, merge, split, sign and convert PDFs.</p></noscript>
 <header class="top">
   <div class="brand"><svg class="mark" viewBox="0 0 64 64" role="img" aria-label="ASC Software logo"><use href="#asc-badge"/></svg><span><span translate="no">ASC Software</span><small>PDF Tools</small></span></div>
   <div class="hdr-actions"><span class="privacy">Core tools run on your device</span><span id="proBadge" class="pill" hidden>Pro</span><button type="button" class="btn" id="goPro">Get Pro</button><button type="button" class="btn" id="acctBtn" hidden>Sign in</button></div>
@@ -229,7 +252,7 @@ a.btn{text-decoration:none}
   <div id="libError" class="banner" role="alert" hidden>The PDF engine could not load. Check your connection and refresh the page.</div>
 
   <h1>PDF Editor and Converter</h1>
-  <p class="lede">Merge, split, sign, edit and convert PDFs without creating an account. Most work happens on your device, so your documents stay private. A free account is optional and keeps your uploads so you can reuse them.</p>
+  <p class="lede">Edit, merge, split, sign and convert PDFs online for free, with no sign-up and no watermark. Most work happens on your device, so your documents stay private. An optional free account keeps your uploads so you can reuse them.</p>
 
   <section id="tool" aria-label="PDF tool">
     <div id="drop" class="drop">
@@ -282,6 +305,9 @@ a.btn{text-decoration:none}
   <section class="faq" aria-labelledby="faqh">
     <h2 id="faqh">Frequently Asked Questions</h2>
     <details><summary>Are my files uploaded anywhere?</summary><p>Not unless you choose to. PDFs are opened, edited, merged, split and converted to Word, images or text inside your browser, so nothing is sent to a server. If you sign in and keep “Save files I upload to my account” on, your uploads are stored in private storage that only your account can open. The Pro conversions to Excel and PowerPoint, and OCR, are processed on our server, and the page tells you before it sends a file.</p></details>
+    <details><summary>Is this PDF editor really free?</summary><p>Yes. Editing, merging, splitting, rotating, signing, basic compression, JPG and PNG conversion and PDF to Word are free, with no watermark and no account. Pro adds larger files, OCR, Excel and PowerPoint conversion, batch work and a few extras.</p></details>
+    <details><summary>Can I edit a PDF without Adobe Acrobat?</summary><p>Yes. Open your PDF here in any modern browser, add text, highlights, whiteout, images or a signature, then download the result. Nothing needs to be installed.</p></details>
+    <details><summary>Does it work on my phone?</summary><p>Yes. The editor works in the browser on phones and tablets as well as on computers.</p></details>
     <details><summary>Do I need an account?</summary><p>No. Every free tool works without one. A free account saves up to 20 of the files you upload, up to 25&nbsp;MB each, so you can add them again from My Files on any device. You can delete saved files at any time.</p></details>
     <details><summary>How good is PDF to Word?</summary><p>It keeps the text, reading order, heading sizes, indents and page breaks, and the result opens and edits in Word. Images, tables and exact layout are not recreated, and scanned PDFs need OCR (Pro) first.</p></details>
     <details><summary>What does Pro include?</summary><p>PDF to Word is free. Pro adds documents over 100 pages and files over 25&nbsp;MB, conversion from PDF to Excel and PowerPoint and from Office files to PDF, OCR for scanned PDFs, batch splitting and converting, strong compression, page numbers and watermarks.</p></details>
@@ -291,7 +317,7 @@ a.btn{text-decoration:none}
     <details><summary>Does Whiteout permanently remove text?</summary><p>With Original quality the covered text is still in the file. To hide it for good, choose one of the flattened Size options before downloading, which turns every page into an image.</p></details>
     <details><summary>Does compressing change my PDF?</summary><p>The smaller options turn each page into a compressed image, so the file shrinks but text can no longer be selected. Keep Original quality if you need searchable text.</p></details>
   </section>
-  <footer><span translate="no">ASC Software</span> · Atlas Scale Collective</footer>
+  <footer><a href="https://ascsoftware.co.za/" translate="no">ASC Software</a> · Atlas Scale Collective</footer>
 </main>
 
 <!-- Page editor -->
