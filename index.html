@@ -4,10 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>PDF Editor and Converter: Merge, Split, Sign &amp; Convert PDFs | ASC Software</title>
-<meta name="description" content="Merge, split, rotate, sign, edit, compress and convert PDFs in your browser. Your files never leave your device.">
+<meta name="description" content="Merge, split, rotate, sign, edit, compress and convert PDFs in your browser. PDF to Word is free. No account needed.">
 <meta name="theme-color" content="#f5f8f6">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='31' fill='%230b2f23'/%3E%3Ccircle cx='32' cy='32' r='27' fill='none' stroke='%23e6d6a8' stroke-width='2'/%3E%3Ctext x='32' y='39' text-anchor='middle' font-family='Georgia,serif' font-weight='700' font-size='20' fill='%23f3e9c6'%3EASC%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <style>
 :root{
   --ink:#0f1a14; --muted:#4f5f57; --bg:#f5f8f6; --surface:#fff; --line:#d6e0db;
@@ -89,8 +90,6 @@ footer{margin-top:40px;color:var(--muted);font-size:13px}
 .toast button:focus-visible{outline-color:#9be3c4}
 /* editor */
 .editor{position:fixed;inset:0;background:#e4ebe7;z-index:50;display:flex;flex-direction:column}
-.ed-bar{display:flex;flex-wrap:wrap;gap:8px;align-items:end;padding:10px max(12px,env(safe-area-inset-left));background:var(--surface);border-bottom:1px solid var(--line)}
-.ed-bar .tools{display:flex;flex-wrap:wrap;gap:6px}
 .ed-stage{flex:1;overflow:auto;overscroll-behavior:contain;padding:16px 12px 40px}
 .pagebox{position:relative;margin:0 auto;background:#fff;box-shadow:0 2px 14px rgba(0,0,0,.25)}
 .pagebox canvas{position:absolute;inset:0;width:100%;height:100%}
@@ -152,6 +151,61 @@ a.btn{text-decoration:none}
 .brand>span{white-space:nowrap}
 @media (max-width:560px){.privacy{display:none}}
 @media (prefers-reduced-motion:reduce){*{transition-duration:.01ms!important;animation-duration:.01ms!important;scroll-behavior:auto!important}}
+
+/* ribbon */
+.ed-bar{display:flex;flex-wrap:wrap;gap:8px 10px;align-items:center;padding:10px max(14px,env(safe-area-inset-left));background:var(--surface);border-bottom:1px solid var(--line);box-shadow:0 6px 16px rgba(15,26,20,.06);position:relative;z-index:2}
+.ed-done{gap:6px;padding:0 16px}
+.ed-done svg,.tbtn svg,.stepper svg{width:18px;height:18px;flex:none;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.ed-tools{display:flex;flex-wrap:wrap;gap:8px}
+.ed-group{display:flex;align-items:center;gap:2px;padding:3px;background:#eef3f0;border:1px solid var(--line);border-radius:12px}
+.tbtn{appearance:none;font:inherit;font-size:13.5px;font-weight:600;color:var(--ink);background:transparent;border:1px solid transparent;border-radius:9px;min-height:40px;padding:0 10px;display:inline-flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;touch-action:manipulation;white-space:nowrap}
+.tbtn:hover:not(:disabled){background:#fff}
+.tbtn[aria-pressed="true"]{background:#fff;border-color:var(--accent);color:#0a4f37;box-shadow:0 1px 3px rgba(15,122,85,.25)}
+.tbtn[aria-pressed="true"] svg{stroke:var(--accent)}
+.tbtn:disabled{opacity:.4;cursor:not-allowed}
+.tbtn.danger{border-color:var(--line);background:#fff}
+.tbtn.danger:hover:not(:disabled){background:#fbeceb;border-color:#e6b4b0;color:var(--danger)}
+.ed-props{gap:10px;padding:3px 8px}
+.prop{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:600;color:var(--muted)}
+.stepper{display:flex;align-items:center;border:1px solid var(--line);border-radius:9px;background:#fff;overflow:hidden}
+.stepper button{width:32px;height:38px;border:0;background:transparent;cursor:pointer;display:grid;place-items:center;color:var(--ink);touch-action:manipulation}
+.stepper button:hover{background:var(--accent-soft)}
+.stepper input{width:40px;height:38px;border:0;border-left:1px solid var(--line);border-right:1px solid var(--line);text-align:center;font:inherit;font-size:14px;color:var(--ink);font-variant-numeric:tabular-nums;-moz-appearance:textfield;background:#fff}
+.stepper input::-webkit-inner-spin-button,.stepper input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+.swatch{width:38px;height:38px;padding:0;border:1px solid var(--line);border-radius:50%;background:none;cursor:pointer;overflow:hidden}
+.swatch::-webkit-color-swatch-wrapper{padding:0}
+.swatch::-webkit-color-swatch{border:0;border-radius:50%}
+.swatch::-moz-color-swatch{border:0;border-radius:50%}
+.ed-pager{display:flex;align-items:center;gap:6px;margin-left:auto}
+.ed-pager strong{font-size:14px;min-width:84px;text-align:center;font-variant-numeric:tabular-nums}
+.ed-pager .tbtn{min-width:40px;padding:0;border-color:var(--line);background:#fff}
+@media (max-width:720px){
+  .ed-bar{gap:8px}
+  .ed-tools{order:3;width:100%;flex-wrap:nowrap;overflow-x:auto;padding-bottom:2px}
+  .ed-tools .ed-group{flex:none}
+  .ed-tools .tbtn{flex-direction:column;gap:2px;font-size:11px;min-width:50px;min-height:50px;padding:4px 4px}
+  .ed-props{order:4}
+  .ed-del{order:5}
+  .ed-del span{display:none}
+  .ed-pager{order:2}
+  .ed-pager strong{min-width:0;font-size:13px}
+}
+/* accounts */
+.seg{display:flex;gap:6px;margin:10px 0}
+.seg .btn[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.stack{display:grid;gap:10px;margin:10px 0}
+.field input[type=email],.field input[type=password],.field textarea{font:inherit;font-size:14px;font-weight:400;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:8px;min-height:40px;padding:0 10px;width:100%}
+.field textarea{padding:8px 10px;min-height:72px;resize:vertical}
+.linkbtn{appearance:none;background:none;border:0;padding:4px 0;font:inherit;font-size:13px;color:var(--accent);text-decoration:underline;cursor:pointer}
+.hp{position:absolute;left:-9999px;width:1px;height:1px;opacity:0;pointer-events:none}
+.early{border-top:1px solid var(--line);margin-top:12px;padding-top:12px}
+.flist{list-style:none;margin:8px 0;padding:0;max-height:46vh;overflow:auto}
+.frow{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--line)}
+.fsel{display:flex;align-items:center;gap:10px;flex:1;min-width:0;cursor:pointer}
+.fsel input{width:18px;height:18px;margin:0;accent-color:var(--accent);flex:none}
+.ftxt{display:flex;flex-direction:column;min-width:0}
+.ftxt .fn{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px}
+.ftxt .meta{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
 </style>
 </head>
 <body>
@@ -168,14 +222,14 @@ a.btn{text-decoration:none}
 <a class="skip" href="#tool">Skip to the PDF tool</a>
 <header class="top">
   <div class="brand"><svg class="mark" viewBox="0 0 64 64" role="img" aria-label="ASC Software logo"><use href="#asc-badge"/></svg><span><span translate="no">ASC Software</span><small>PDF Tools</small></span></div>
-  <div class="hdr-actions"><span class="privacy">Core tools run on your device</span><span id="proBadge" class="pill" hidden>Pro</span><button type="button" class="btn" id="goPro">Get Pro</button></div>
+  <div class="hdr-actions"><span class="privacy">Core tools run on your device</span><span id="proBadge" class="pill" hidden>Pro</span><button type="button" class="btn" id="goPro">Get Pro</button><button type="button" class="btn" id="acctBtn" hidden>Sign in</button></div>
 </header>
 
 <main id="main">
   <div id="libError" class="banner" role="alert" hidden>The PDF engine could not load. Check your connection and refresh the page.</div>
 
   <h1>PDF Editor and Converter</h1>
-  <p class="lede">Merge, split, sign, edit and convert PDFs without creating an account. Most work happens on your device, so your documents stay private.</p>
+  <p class="lede">Merge, split, sign, edit and convert PDFs without creating an account. Most work happens on your device, so your documents stay private. A free account is optional and keeps your uploads so you can reuse them.</p>
 
   <section id="tool" aria-label="PDF tool">
     <div id="drop" class="drop">
@@ -227,8 +281,10 @@ a.btn{text-decoration:none}
 
   <section class="faq" aria-labelledby="faqh">
     <h2 id="faqh">Frequently Asked Questions</h2>
-    <details><summary>Are my files uploaded anywhere?</summary><p>Not for the everyday tools. PDFs are opened, edited, merged, split and converted to images or text inside your browser, so nothing is sent to a server. The Pro conversions to Word, Excel and PowerPoint, and OCR, are processed on our server, and the page tells you before it sends a file.</p></details>
-    <details><summary>What does Pro include?</summary><p>Pro adds documents over 100 pages and files over 25&nbsp;MB, conversion between PDF and Word, Excel or PowerPoint, OCR for scanned PDFs, batch splitting and converting, strong compression, page numbers and watermarks.</p></details>
+    <details><summary>Are my files uploaded anywhere?</summary><p>Not unless you choose to. PDFs are opened, edited, merged, split and converted to Word, images or text inside your browser, so nothing is sent to a server. If you sign in and keep “Save files I upload to my account” on, your uploads are stored in private storage that only your account can open. The Pro conversions to Excel and PowerPoint, and OCR, are processed on our server, and the page tells you before it sends a file.</p></details>
+    <details><summary>Do I need an account?</summary><p>No. Every free tool works without one. A free account saves up to 20 of the files you upload, up to 25&nbsp;MB each, so you can add them again from My Files on any device. You can delete saved files at any time.</p></details>
+    <details><summary>How good is PDF to Word?</summary><p>It keeps the text, reading order, heading sizes, indents and page breaks, and the result opens and edits in Word. Images, tables and exact layout are not recreated, and scanned PDFs need OCR (Pro) first.</p></details>
+    <details><summary>What does Pro include?</summary><p>PDF to Word is free. Pro adds documents over 100 pages and files over 25&nbsp;MB, conversion from PDF to Excel and PowerPoint and from Office files to PDF, OCR for scanned PDFs, batch splitting and converting, strong compression, page numbers and watermarks.</p></details>
     <details><summary>How do I merge PDFs?</summary><p>Add several PDFs, drag the pages into the order you want, then choose Download PDF.</p></details>
     <details><summary>How do I split a PDF or extract pages?</summary><p>Tick the pages you want, then choose Download Selected. To remove pages, select them and choose Delete.</p></details>
     <details><summary>How do I sign a PDF?</summary><p>Open a page with the pencil button, choose Signature, draw it, then drag it into place and resize it.</p></details>
@@ -241,22 +297,35 @@ a.btn{text-decoration:none}
 <!-- Page editor -->
 <div id="editor" class="editor" role="dialog" aria-modal="true" aria-labelledby="edTitle" hidden>
   <div class="ed-bar">
-    <button type="button" class="btn primary" id="edDone">Done</button>
-    <div class="tools" role="toolbar" aria-label="Editing tools">
-      <button type="button" class="btn" data-tool="select" aria-pressed="true">Select</button>
-      <button type="button" class="btn" data-tool="text" aria-pressed="false">Text</button>
-      <button type="button" class="btn" data-tool="highlight" aria-pressed="false">Highlight</button>
-      <button type="button" class="btn" data-tool="whiteout" aria-pressed="false" title="Covers content. To remove the text underneath, export with one of the flattened Size options.">Whiteout</button>
-      <button type="button" class="btn" id="edSign">Signature</button>
-      <button type="button" class="btn" id="edImg">Image</button>
+    <button type="button" class="btn primary ed-done" id="edDone"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7"/></svg>Done</button>
+    <div class="ed-tools">
+      <div class="ed-group" role="toolbar" aria-label="Editing tools">
+        <button type="button" class="tbtn" data-tool="select" aria-pressed="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3.5 19 10l-6.2 2L10.8 18.5z"/></svg><span>Select</span></button>
+        <button type="button" class="tbtn" data-tool="text" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 6V4.5h14V6M12 4.5V20M9 20h6"/></svg><span>Text</span></button>
+        <button type="button" class="tbtn" data-tool="highlight" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 11-5.5 5.5V20H8l5.5-5.5"/><path d="m14.5 4.5 5 5-6 6-5-5z"/></svg><span>Highlight</span></button>
+        <button type="button" class="tbtn" data-tool="whiteout" aria-pressed="false" title="Covers content. To remove the text underneath, export with one of the flattened Size options."><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 21-4-4a2 2 0 0 1 0-2.8L14 3.2a2 2 0 0 1 2.8 0l4 4a2 2 0 0 1 0 2.8L11 21z"/><path d="M7 21h14M8.5 10.5l5 5"/></svg><span>Whiteout</span></button>
+      </div>
+      <div class="ed-group" role="group" aria-label="Insert">
+        <button type="button" class="tbtn" id="edSign"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 15c3-8 5-9 6-6s-2 7 1 6 3-4 5-4 2 3 6 1"/><path d="M3 21h18"/></svg><span>Signature</span></button>
+        <button type="button" class="tbtn" id="edImg"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="1.8"/><path d="m21 16-5-5-8 8"/></svg><span>Image</span></button>
+      </div>
     </div>
-    <label class="field">Text size<input type="number" id="fs" value="14" min="6" max="120" inputmode="numeric" autocomplete="off" name="fontSize"></label>
-    <label class="field">Colour<input type="color" id="tc" value="#111111" name="textColor"></label>
-    <button type="button" class="btn danger" id="edDel" disabled>Delete Item</button>
-    <span class="grow" style="flex:1"></span>
-    <button type="button" class="btn" id="edPrev" aria-label="Previous page">‹</button>
-    <strong id="edTitle" style="font-variant-numeric:tabular-nums">Page 1</strong>
-    <button type="button" class="btn" id="edNext" aria-label="Next page">›</button>
+    <div class="ed-group ed-props" role="group" aria-label="Text options">
+      <div class="prop"><span id="fsLbl">Size</span>
+        <div class="stepper" role="group" aria-labelledby="fsLbl">
+          <button type="button" id="fsDown" aria-label="Decrease text size"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12"/></svg></button>
+          <input type="number" id="fs" value="14" min="6" max="120" inputmode="numeric" autocomplete="off" name="fontSize" aria-label="Text size">
+          <button type="button" id="fsUp" aria-label="Increase text size"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6v12M6 12h12"/></svg></button>
+        </div>
+      </div>
+      <label class="prop">Colour <input type="color" id="tc" class="swatch" value="#111111" name="textColor"></label>
+    </div>
+    <button type="button" class="tbtn danger ed-del" id="edDel" disabled aria-label="Delete selected item" title="Delete selected item"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg><span>Delete</span></button>
+    <div class="ed-pager">
+      <button type="button" class="tbtn" id="edPrev" aria-label="Previous page"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg></button>
+      <strong id="edTitle">Page 1</strong>
+      <button type="button" class="tbtn" id="edNext" aria-label="Next page"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button>
+    </div>
   </div>
   <div class="ed-stage" id="edStage">
     <div class="pagebox" id="pageBox"><canvas id="edCanvas" aria-label="Page preview"></canvas><div class="overlay" id="overlay"></div></div>
@@ -285,7 +354,7 @@ a.btn{text-decoration:none}
     <p id="proWhy" class="lede" style="margin:0 0 6px"></p>
     <ul class="plist">
       <li>Documents over 100 pages and files over 25&nbsp;MB</li>
-      <li>Convert PDF to Word, Excel and PowerPoint, and Office files to PDF</li>
+      <li>Convert PDF to Excel and PowerPoint, and Word, Excel or PowerPoint files to PDF</li>
       <li>OCR for scanned PDFs</li>
       <li>Batch work: split into many files and convert several files at once</li>
       <li>Strong compression, page numbers and watermarks</li>
@@ -293,8 +362,19 @@ a.btn{text-decoration:none}
     <p id="proPrice" style="font-weight:700;margin:0 0 10px" hidden></p>
     <div class="row">
       <button type="button" class="btn" id="proClose">Not Now</button>
-      <a id="proBuy" class="btn primary" href="#">Get Pro</a>
+      <button type="button" class="btn primary" id="proBuy">Get Pro</button>
     </div>
+    <form id="earlyForm" class="early" hidden novalidate>
+      <p style="margin:0;font-weight:700">Request early access</p>
+      <div class="stack">
+        <label class="field">Email<input type="email" id="earlyEmail" name="email" autocomplete="email" spellcheck="false" placeholder="you@example.com"></label>
+        <label class="field">What would you use Pro for? (optional)<textarea id="earlyNote" name="note" maxlength="500"></textarea></label>
+        <input class="hp" type="text" id="earlyHp" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
+      </div>
+      <div class="row"><button type="submit" class="btn primary" id="earlySend">Send Request</button></div>
+      <p id="earlyMsg" class="msg" role="status"></p>
+      <p class="msg">Prefer email? Write to <strong id="earlyAddr"></strong> <button type="button" class="linkbtn" id="earlyCopy">Copy address</button></p>
+    </form>
     <form id="keyForm" class="keyrow">
       <label class="field">Already have a licence key?<input type="text" id="keyIn" name="licenceKey" autocomplete="off" spellcheck="false" placeholder="Paste your key…"></label>
       <button type="submit" class="btn">Activate</button>
@@ -303,11 +383,48 @@ a.btn{text-decoration:none}
   </div>
 </div>
 
+<!-- Account dialog -->
+<div id="acctDlg" class="modal" role="dialog" aria-modal="true" aria-labelledby="acctH" hidden>
+  <div class="panel">
+    <h2 id="acctH">Sign in</h2>
+    <p id="acctLede" class="lede" style="margin:0 0 4px"></p>
+    <div class="seg" id="acctSeg" role="group" aria-label="Account action">
+      <button type="button" class="btn" data-mode="in" aria-pressed="true">Sign In</button>
+      <button type="button" class="btn" data-mode="up" aria-pressed="false">Create Account</button>
+    </div>
+    <form id="acctForm" class="stack" novalidate>
+      <label class="field" id="acctEmailWrap">Email<input type="email" id="acctEmail" name="email" autocomplete="email" spellcheck="false"></label>
+      <label class="field" id="acctPwWrap">Password<input type="password" id="acctPw" name="password" autocomplete="current-password"></label>
+      <div class="row"><button type="button" class="btn" id="acctCancel">Cancel</button><button type="submit" class="btn primary" id="acctGo">Sign In</button></div>
+    </form>
+    <p style="margin:0"><button type="button" class="linkbtn" id="acctForgot">Forgot password?</button></p>
+    <p id="acctMsg" class="msg" role="status"></p>
+  </div>
+</div>
+
+<!-- My files dialog -->
+<div id="filesDlg" class="modal" role="dialog" aria-modal="true" aria-labelledby="filesH" hidden>
+  <div class="panel wide">
+    <h2 id="filesH">My Files</h2>
+    <p id="filesWho" class="lede" style="margin:0 0 4px"></p>
+    <label class="chkline"><input type="checkbox" id="autoSave"> Save files I upload to my account</label>
+    <p id="filesUse" class="msg"></p>
+    <ul id="filesList" class="flist" aria-label="Your saved files"></ul>
+    <p id="filesEmpty" class="msg" hidden>No saved files yet. Files you add while signed in will appear here.</p>
+    <p id="filesMsg" class="msg" role="status"></p>
+    <div class="row">
+      <button type="button" class="btn" id="filesOut">Sign Out</button>
+      <button type="button" class="btn" id="filesClose">Close</button>
+      <button type="button" class="btn primary" id="filesAdd" disabled>Add Selected</button>
+    </div>
+  </div>
+</div>
+
 <!-- Convert dialog -->
 <div id="convDlg" class="modal" role="dialog" aria-modal="true" aria-labelledby="convH" hidden>
   <div class="panel wide">
     <h2 id="convH">Convert a File</h2>
-    <p class="lede" style="margin:0 0 8px">Choose your files, pick the format you want, then convert. Image and PDF-to-image conversions run on your device.</p>
+    <p class="lede" style="margin:0 0 8px">Choose your files, pick the format you want, then convert. PDF to Word, text and image conversions run on your device.</p>
     <button type="button" class="btn" id="convPick">Choose Files</button>
     <ul id="convFiles" class="convfiles" aria-label="Chosen files"></ul>
     <div id="convTargets" class="targets" role="group" aria-label="Convert to"></div>
@@ -337,6 +454,7 @@ a.btn{text-decoration:none}
 <input type="file" id="imgIn" accept="image/*" hidden>
 <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.0/dist/umd/supabase.js" crossorigin="anonymous"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js" crossorigin="anonymous"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js" crossorigin="anonymous"></script>
 <script>
@@ -356,6 +474,8 @@ const CONFIG = {
   licenseEndpoint: '',   // POST {key} -> {valid:true, expires:'2027-01-01T00:00:00Z'}. Empty = keys cannot be checked yet
   convertEndpoint: '',   // POST multipart {file, target, key} -> converted file bytes. Needs a server (Office, OCR)
   price: '',             // e.g. 'R99 per month'. Empty hides the price line
+  supabaseUrl: 'https://npoltdukdxrjqdqyiqmb.supabase.co', // accounts, saved files and early-access requests
+  supabaseKey: 'sb_publishable_nlqR8OvqJzrpbYTJYsIwHQ_GYI284Og', // publishable key: safe in the page, protected by row level security
   devExpose: false       // leave false in production
 };
 const FREE = { pages: 100, bytes: 25 * 1024 * 1024, batch: 5 };
@@ -417,14 +537,14 @@ async function drawPage(p, canvas, cssW) {
 }
 
 /* ---------- loading files ---------- */
-async function addFiles(files) {
-  let added = 0;
+async function addFiles(files, opts = {}) {
+  let added = 0; const keep = [];
   for (const f of files) {
     const isPdf = f.type === 'application/pdf' || /\.pdf$/i.test(f.name);
     if (!pro.active && f.size > FREE.bytes) { gate('bigfile'); continue; }
     try {
-      if (isPdf) added += await addPdf(f);
-      else if (f.type.startsWith('image/')) added += await addImage(f);
+      if (isPdf) { added += await addPdf(f); keep.push(f); }
+      else if (f.type.startsWith('image/')) { added += await addImage(f); keep.push(f); }
       else toast(`${f.name} is not a PDF or image.`);
     } catch (err) {
       if (err && err.name === 'PasswordException') toast(`${f.name} is password-protected. Remove the password first, then add it again.`);
@@ -432,6 +552,7 @@ async function addFiles(files) {
       console.error(err);
     }
   }
+  if (!opts.fromAccount && keep.length) saveUploads(keep);
   if (added) { if (!$('#outName').dataset.touched) $('#outName').value = defaultName(); refresh(); }
 }
 async function addPdf(f) {
@@ -847,6 +968,8 @@ E.ov.addEventListener('pointerdown', e => {
 });
 E.fs.addEventListener('input', () => { const a = ed && ed.sel; if (a && a.type === 'text') { a.size = Math.max(6, Math.min(120, Number(E.fs.value) || 14)); placeEl(a); measure(a); } });
 E.tc.addEventListener('input', () => { const a = ed && ed.sel; if (a && a.type === 'text') a.el.style.color = a.color = E.tc.value; });
+const stepFs = d => { E.fs.value = Math.max(6, Math.min(120, (Number(E.fs.value) || 14) + d)); E.fs.dispatchEvent(new Event('input', { bubbles: true })); };
+$('#fsDown').onclick = () => stepFs(-1); $('#fsUp').onclick = () => stepFs(1);
 
 // images
 const dataToBytes = url => { const b = atob(url.split(',')[1]), u = new Uint8Array(b.length); for (let i = 0; i < b.length; i++) u[i] = b.charCodeAt(i); return u; };
@@ -936,17 +1059,35 @@ function closeModal(el) {
 /* ---------- Pro gate ---------- */
 const WHY = {
   pages: `Documents over ${FREE.pages} pages`, bigfile: 'Files over 25 MB', strong: 'Strong compression', pagenums: 'Page numbers', watermark: 'Watermarks',
-  splitbatch: 'Splitting into many files at once', batch: `Converting more than ${FREE.batch} files at once`, office: 'Converting to and from Word, Excel and PowerPoint', ocr: 'OCR for scanned PDFs'
+  splitbatch: 'Splitting into many files at once', batch: `Converting more than ${FREE.batch} files at once`, office: 'Converting to Excel and PowerPoint, and Office files to PDF', ocr: 'OCR for scanned PDFs'
 };
 function gate(feature) { if (pro.active) return true; openPro(feature); return false; }
 function openPro(feature) {
   $('#proWhy').textContent = WHY[feature] ? `Pro feature: ${WHY[feature]}.` : 'Pro unlocks the extra tools below.';
   $('#proPrice').textContent = CONFIG.price; $('#proPrice').hidden = !CONFIG.price;
-  const buy = $('#proBuy');
-  if (CONFIG.checkoutUrl) { buy.href = CONFIG.checkoutUrl; buy.textContent = 'Get Pro'; buy.target = '_blank'; buy.rel = 'noopener'; }
-  else { buy.href = `mailto:${CONFIG.contactEmail}?subject=${encodeURIComponent('ASC PDF Pro early access')}`; buy.textContent = 'Request Early Access'; buy.removeAttribute('target'); }
+  const buy = $('#proBuy'); buy.textContent = CONFIG.checkoutUrl ? 'Get Pro' : 'Request Early Access'; proFeature = feature || '';
+  $('#earlyForm').hidden = true; $('#earlyMsg').textContent = ''; $('#earlySend').disabled = false; $('#earlyAddr').textContent = CONFIG.contactEmail;
   $('#keyMsg').textContent = ''; openModal($('#proDlg'), buy);
 }
+let proFeature = '';
+$('#proBuy').onclick = () => {
+  if (CONFIG.checkoutUrl) { window.open(CONFIG.checkoutUrl, '_blank', 'noopener'); return; }
+  const f = $('#earlyForm'), em = $('#earlyEmail'); f.hidden = false; if (!em.value && acct.user) em.value = acct.user.email;
+  f.scrollIntoView({ block: 'nearest' }); em.focus();
+};
+$('#earlyCopy').onclick = async () => { try { await navigator.clipboard.writeText(CONFIG.contactEmail); toast('Address copied.'); } catch { toast(`Email us at ${CONFIG.contactEmail}.`); } };
+$('#earlyForm').addEventListener('submit', async e => {
+  e.preventDefault(); const msg = $('#earlyMsg'), em = $('#earlyEmail'), email = em.value.trim();
+  if ($('#earlyHp').value) return;
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { msg.textContent = 'Enter a valid email address.'; em.focus(); return; }
+  if (!sb) { msg.textContent = `Can’t send from here. Please email ${CONFIG.contactEmail}.`; return; }
+  $('#earlySend').disabled = true; msg.textContent = 'Sending…';
+  try {
+    const { error } = await sb.from('pdf_early_access').insert({ email, note: $('#earlyNote').value.trim() || null, feature: proFeature || null });
+    if (error) throw error;
+    msg.textContent = 'Thanks! We’ve got your request and will email you when Pro opens.'; $('#earlyNote').value = '';
+  } catch (err) { console.error(err); $('#earlySend').disabled = false; msg.textContent = `That didn’t send. Please try again, or email ${CONFIG.contactEmail}.`; }
+});
 function syncPro() { document.body.classList.toggle('is-pro', pro.active); $('#proBadge').hidden = !pro.active; $('#goPro').hidden = pro.active; }
 $('#goPro').onclick = () => openPro(); $('#proClose').onclick = () => closeModal($('#proDlg'));
 $('#keyForm').addEventListener('submit', async e => {
@@ -1007,7 +1148,7 @@ $('#spRange').onclick = async () => {
 
 /* ---------- convert ---------- */
 const TARGETS = {
-  pdf: [{ id: 'jpg', label: 'JPG images' }, { id: 'png', label: 'PNG images' }, { id: 'txt', label: 'Plain text' }, { id: 'docx', label: 'Word', pro: 'office' }, { id: 'xlsx', label: 'Excel', pro: 'office' }, { id: 'pptx', label: 'PowerPoint', pro: 'office' }, { id: 'ocr', label: 'Searchable PDF (OCR)', pro: 'ocr' }],
+  pdf: [{ id: 'jpg', label: 'JPG images' }, { id: 'png', label: 'PNG images' }, { id: 'txt', label: 'Plain text' }, { id: 'docx', label: 'Word (.docx)' }, { id: 'xlsx', label: 'Excel', pro: 'office' }, { id: 'pptx', label: 'PowerPoint', pro: 'office' }, { id: 'ocr', label: 'Searchable PDF (OCR)', pro: 'ocr' }],
   image: [{ id: 'png', label: 'PNG' }, { id: 'jpg', label: 'JPG' }, { id: 'webp', label: 'WebP' }],
   office: [{ id: 'pdf', label: 'PDF', pro: 'office' }]
 };
@@ -1036,7 +1177,7 @@ $('#convIn').onchange = e => {
   const k = kindOf(fs[0]); if (!k) { $('#convMsg').textContent = 'That file type isn’t supported. Use a PDF, an image, or a Word, Excel or PowerPoint file.'; return; }
   const same = fs.filter(f => kindOf(f) === k);
   if (k !== conv.kind) { conv.kind = k; conv.target = TARGETS[k][0].id; }
-  conv.files = same; $('#convMsg').textContent = same.length < fs.length ? `Skipped ${fs.length - same.length} file(s) of a different type.` : ''; renderConv();
+  conv.files = same; saveUploads(same); $('#convMsg').textContent = same.length < fs.length ? `Skipped ${fs.length - same.length} file(s) of a different type.` : ''; renderConv();
 };
 $('#convTargets').addEventListener('click', e => {
   const b = e.target.closest('[data-target]'); if (!b) return; const t = TARGETS[conv.kind].find(x => x.id === b.dataset.target);
@@ -1063,6 +1204,65 @@ async function pdfToText(file) {
     text += line.trimEnd() + '\n\n';
   }
   return text.trim() ? text : null;
+}
+
+const WORD_MIME = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+const xmlText = t => String(t).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F￾￿]/g, '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+/* Text-based PDF to Word: keeps text, reading order, headings, rough indents and page breaks. Images, tables and exact layout are not recreated. */
+async function pdfToDocx(file, prog) {
+  const doc = await pdfDoc(file); if (!pro.active && doc.numPages > FREE.pages) { gate('pages'); throw new Error('gated'); }
+  const pages = []; let pw = 595, ph = 842, chars = 0; const sizeCount = new Map();
+  for (let n = 1; n <= doc.numPages; n++) {
+    const pg = await doc.getPage(n); if (n === 1) { const v = pg.view; pw = v[2] - v[0]; ph = v[3] - v[1]; }
+    const tc = await pg.getTextContent(), lines = []; let ln = null;
+    const end = () => { if (ln && ln.text.trim()) lines.push(ln); ln = null; };
+    for (const it of tc.items) {
+      const size = Math.abs(it.transform[3]) || it.height || 11, x = it.transform[4], y = it.transform[5];
+      if (!it.str && !it.hasEOL) continue;
+      if (ln && Math.abs(y - ln.y) > Math.max(2, size * 0.5)) end();
+      if (!ln) { const fam = (tc.styles[it.fontName] || {}).fontFamily || ''; ln = { x, y, size, text: '', endX: x, fam: /mono/i.test(fam) ? 'Courier New' : (/serif/i.test(fam) && !/sans/i.test(fam)) ? 'Times New Roman' : 'Arial' }; }
+      if (it.str) {
+        const gap = x - ln.endX;
+        if (ln.text && gap > size * 3) ln.text += '\t';
+        else if (ln.text && gap > size * 0.2 && !/\s$/.test(ln.text) && !/^\s/.test(it.str)) ln.text += ' ';
+        ln.text += it.str; ln.endX = x + (it.width || 0); ln.size = Math.max(ln.size, size);
+        const k = Math.round(size); sizeCount.set(k, (sizeCount.get(k) || 0) + it.str.length); chars += it.str.trim().length;
+      }
+      if (it.hasEOL) end();
+    }
+    end(); pages.push(lines); prog && prog(n, doc.numPages);
+  }
+  if (!chars) return null;
+  let body = 11, best = 0; for (const [k, v] of sizeCount) if (v > best) { best = v; body = k; }
+  let xml = '';
+  pages.forEach((lines, pi) => {
+    const maxW = Math.max(1, ...lines.map(l => l.endX - l.x)), minX = lines.length ? Math.min(...lines.map(l => l.x)) : 0;
+    const paras = []; let cur = null;
+    for (const l of lines) {
+      const w = l.endX - l.x;
+      const join = cur && cur.lastY - l.y > 0 && cur.lastY - l.y <= cur.size * 1.6 && Math.abs(l.size - cur.size) <= 1 && cur.lastW >= maxW * 0.6 && !/\t/.test(cur.text + l.text) && Math.abs(l.x - cur.x) < l.size * 1.5;
+      if (join) { cur.text += (/-$/.test(cur.text) ? '' : ' ') + l.text.trim(); cur.lastY = l.y; cur.lastW = w; }
+      else { cur = { text: l.text.replace(/^\s+/, ''), x: l.x, size: l.size, fam: l.fam, lastY: l.y, lastW: w }; paras.push(cur); }
+    }
+    if (!paras.length) xml += '<w:p><w:pPr>' + (pi ? '<w:pageBreakBefore/>' : '') + '</w:pPr></w:p>';
+    paras.forEach((p, i) => {
+      const heading = p.size >= body * 1.25, ind = Math.min(6000, Math.round((p.x - minX) * 20)), sz = Math.max(8, Math.min(144, Math.round(p.size * 2)));
+      const runs = p.text.split('\t').map((t, k) => (k ? '<w:r><w:tab/></w:r>' : '') + (t ? `<w:r><w:rPr><w:rFonts w:ascii="${p.fam}" w:hAnsi="${p.fam}" w:cs="${p.fam}"/>${heading ? '<w:b/>' : ''}<w:sz w:val="${sz}"/></w:rPr><w:t xml:space="preserve">${xmlText(t)}</w:t></w:r>` : '')).join('');
+      xml += `<w:p><w:pPr>${pi && !i ? '<w:pageBreakBefore/>' : ''}<w:spacing w:after="${heading ? 160 : 120}"/>${ind > 400 ? `<w:ind w:left="${ind}"/>` : ''}</w:pPr>${runs}</w:p>`;
+    });
+  });
+  const tw = Math.round(pw * 20), th = Math.round(ph * 20), NS = 'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"', H = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
+  const enc = new TextEncoder(), f = (name, t) => ({ name, data: enc.encode(t) });
+  return {
+    name: file.name.replace(/\.pdf$/i, '') + '.docx',
+    data: new Uint8Array(await makeZip([
+      f('[Content_Types].xml', `${H}<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/></Types>`),
+      f('_rels/.rels', `${H}<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>`),
+      f('word/_rels/document.xml.rels', `${H}<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`),
+      f('word/styles.xml', `${H}<w:styles ${NS}><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="Arial" w:hAnsi="Arial" w:cs="Arial"/><w:sz w:val="22"/><w:szCs w:val="22"/><w:lang w:val="en-ZA"/></w:rPr></w:rPrDefault><w:pPrDefault><w:pPr><w:spacing w:after="120" w:line="264" w:lineRule="auto"/></w:pPr></w:pPrDefault></w:docDefaults><w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/></w:style></w:styles>`),
+      f('word/document.xml', `${H}<w:document ${NS}><w:body>${xml}<w:sectPr><w:pgSz w:w="${tw}" w:h="${th}"/><w:pgMar w:top="1080" w:right="1080" w:bottom="1080" w:left="1080" w:header="720" w:footer="720" w:gutter="0"/></w:sectPr></w:body></w:document>`)
+    ]).arrayBuffer())
+  };
 }
 async function imageConvert(file, fmt) {
   const bmp = await createImageBitmap(file), c = document.createElement('canvas'); c.width = bmp.width; c.height = bmp.height; const x = c.getContext('2d');
@@ -1091,11 +1291,15 @@ $('#convGo').onclick = async () => {
         const tx = await pdfToText(f);
         if (tx === null) { msg.textContent = `No text found in ${f.name}. It may be a scan, and OCR (Pro) can read it.`; continue; }
         out.push({ name: f.name.replace(/\.pdf$/i, '') + '.txt', data: new TextEncoder().encode(tx) });
+      } else if (conv.kind === 'pdf' && t.id === 'docx') {
+        const d = await pdfToDocx(f, (n, m) => { msg.textContent = `File ${i + 1} of ${conv.files.length}: page ${n} of ${m}…`; });
+        if (!d) { msg.textContent = `No text found in ${f.name}. It may be a scan, and OCR (Pro) can read it.`; continue; }
+        out.push(d);
       } else if (conv.kind === 'pdf') out.push(...await pdfToImages(f, t.id, (n, m) => { msg.textContent = `File ${i + 1} of ${conv.files.length}: page ${n} of ${m}…`; }));
       else out.push(await imageConvert(f, t.id));
     }
     if (!out.length) return;
-    if (out.length === 1) { const o = out[0]; await saveBlob(new Blob([o.data], { type: /\.txt$/.test(o.name) ? 'text/plain' : '' }), o.name); msg.textContent = `Saved ${o.name}.`; }
+    if (out.length === 1) { const o = out[0]; await saveBlob(new Blob([o.data], { type: /\.txt$/.test(o.name) ? 'text/plain' : /\.docx$/.test(o.name) ? WORD_MIME : '' }), o.name); msg.textContent = /\.docx$/.test(o.name) ? `Saved ${o.name}. Text and headings are kept. Images, tables and exact layout are not.` : `Saved ${o.name}.`; }
     else { const z = makeZip(out); await saveBlob(z, 'converted.zip'); msg.textContent = `Saved ${out.length} files in converted.zip.`; }
   } catch (err) {
     if (err.message === 'not-connected') msg.textContent = 'This conversion runs on a server that isn’t connected yet.';
@@ -1136,7 +1340,7 @@ const TOOLS = [
   { g: 'Convert', id: 'pdf2img', icon: 'image', name: 'PDF to JPG', desc: 'Every page as an image' },
   { g: 'Convert', id: 'pdf2txt', icon: 'text', name: 'PDF to Text', desc: 'Pull out the text' },
   { g: 'Convert', id: 'imgconv', icon: 'swap', name: 'Image Converter', desc: 'PNG, JPG and WebP' },
-  { g: 'Convert', id: 'pdf2word', icon: 'word', name: 'PDF to Word', desc: 'Editable .docx', pro: 'office' },
+  { g: 'Convert', id: 'pdf2word', icon: 'word', name: 'PDF to Word', desc: 'Editable .docx' },
   { g: 'Convert', id: 'pdf2excel', icon: 'excel', name: 'PDF to Excel', desc: 'Tables to .xlsx', pro: 'office' },
   { g: 'Convert', id: 'pdf2ppt', icon: 'ppt', name: 'PDF to PowerPoint', desc: 'Slides as .pptx', pro: 'office' },
   { g: 'Convert', id: 'word2pdf', icon: 'word', name: 'Office to PDF', desc: 'Word, Excel, PowerPoint', pro: 'office' },
@@ -1175,8 +1379,134 @@ function startTool(id) {
   runIntent(id);
 }
 $('#toolGroups').addEventListener('click', e => { const b = e.target.closest('[data-tile]'); if (b) startTool(b.dataset.tile); });
+/* ---------- accounts and saved files (Supabase) ---------- */
+const BUCKET = 'pdf-user-files', MAX_SAVED = 20, MAX_SAVED_BYTES = 50 * 1024 * 1024;
+const acct = { user: null, files: [], fresh: false, mode: 'in', auto: true };
+try { acct.auto = localStorage.getItem('asc_pdf_autosave') !== '0'; } catch {}
+let sb = null;
+try { if (CONFIG.supabaseUrl && CONFIG.supabaseKey && window.supabase) sb = window.supabase.createClient(CONFIG.supabaseUrl, CONFIG.supabaseKey); } catch (e) { console.error(e); }
+const redirectUrl = () => /^https?:/.test(location.protocol) ? location.origin + location.pathname : undefined;
+function syncAcct() { const b = $('#acctBtn'); b.hidden = !sb; b.textContent = acct.user ? 'My Files' : 'Sign in'; }
+function authMsg(err) {
+  const m = String((err && err.message) || '');
+  if (/invalid login/i.test(m)) return 'Email or password is wrong.';
+  if (/not confirmed/i.test(m)) return 'Confirm your email first. Check your inbox for the link.';
+  if (/already registered|already been registered/i.test(m)) return 'That email already has an account. Sign in instead.';
+  if (/rate limit|too many|seconds/i.test(m)) return 'Too many attempts. Wait a minute and try again.';
+  if (/password/i.test(m) && /(weak|short|least|characters)/i.test(m)) return 'Use a longer, stronger password (at least 8 characters).';
+  if (/fetch|network/i.test(m)) return 'Couldn’t reach the server. Check your connection and try again.';
+  return 'Something went wrong. Please try again.';
+}
+const MODES = {
+  in: { title: 'Sign in', go: 'Sign In', lede: 'Sign in to reuse the files you uploaded before.' },
+  up: { title: 'Create your account', go: 'Create Account', lede: 'A free account keeps up to 20 of your uploaded files so you can reuse them on any device.' },
+  reset: { title: 'Reset your password', go: 'Send Reset Link', lede: 'Enter your email and we’ll send a link to choose a new password.' },
+  newpw: { title: 'Choose a new password', go: 'Save Password', lede: 'Enter a new password for your account.' }
+};
+function setAcctMode(m) {
+  acct.mode = m; const c = MODES[m];
+  $('#acctH').textContent = c.title; $('#acctLede').textContent = c.lede; $('#acctGo').textContent = c.go; $('#acctMsg').textContent = '';
+  $('#acctSeg').hidden = m === 'reset' || m === 'newpw'; $('#acctEmailWrap').hidden = m === 'newpw'; $('#acctPwWrap').hidden = m === 'reset'; $('#acctForgot').hidden = m !== 'in';
+  $('#acctPw').autocomplete = m === 'in' ? 'current-password' : 'new-password';
+  $$('#acctSeg [data-mode]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.mode === m)));
+}
+function openAcct(m = 'in') { setAcctMode(m); $('#acctPw').value = ''; openModal($('#acctDlg'), m === 'newpw' ? $('#acctPw') : $('#acctEmail')); }
+$('#acctSeg').addEventListener('click', e => { const b = e.target.closest('[data-mode]'); if (b) setAcctMode(b.dataset.mode); });
+$('#acctForgot').onclick = () => setAcctMode('reset'); $('#acctCancel').onclick = () => closeModal($('#acctDlg'));
+$('#acctForm').addEventListener('submit', async e => {
+  e.preventDefault(); if (!sb) return;
+  const m = acct.mode, email = $('#acctEmail').value.trim(), pw = $('#acctPw').value, msg = $('#acctMsg'), go = $('#acctGo');
+  if (m !== 'newpw' && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { msg.textContent = 'Enter a valid email address.'; $('#acctEmail').focus(); return; }
+  if (m !== 'reset' && !pw) { msg.textContent = 'Enter your password.'; $('#acctPw').focus(); return; }
+  if ((m === 'up' || m === 'newpw') && pw.length < 8) { msg.textContent = 'Use a password of at least 8 characters.'; $('#acctPw').focus(); return; }
+  go.disabled = true; msg.textContent = 'One moment…';
+  try {
+    if (m === 'in') { const { error } = await sb.auth.signInWithPassword({ email, password: pw }); if (error) throw error; closeModal($('#acctDlg')); toast('Signed in.'); }
+    else if (m === 'up') {
+      const { data, error } = await sb.auth.signUp({ email, password: pw, options: { emailRedirectTo: redirectUrl() } }); if (error) throw error;
+      if (data.user && data.user.identities && !data.user.identities.length) msg.textContent = 'That email already has an account. Sign in instead.';
+      else if (data.session) { closeModal($('#acctDlg')); toast('Account created.'); }
+      else msg.textContent = 'Almost done. Check your email and click the link to confirm your account, then sign in.';
+    } else if (m === 'reset') { const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: redirectUrl() }); if (error) throw error; msg.textContent = 'If that email has an account, a reset link is on its way.'; }
+    else { const { error } = await sb.auth.updateUser({ password: pw }); if (error) throw error; closeModal($('#acctDlg')); toast('Password updated.'); }
+  } catch (err) { console.error(err); msg.textContent = authMsg(err); }
+  finally { go.disabled = false; $('#acctPw').value = ''; }
+});
+if (sb) {
+  sb.auth.onAuthStateChange((ev, session) => {
+    const prev = acct.user && acct.user.id; acct.user = session ? session.user : null; if ((acct.user && acct.user.id) !== prev) { acct.files = []; acct.fresh = false; }
+    syncAcct(); if (ev === 'PASSWORD_RECOVERY') setTimeout(() => openAcct('newpw'), 0);
+  });
+}
+$('#acctBtn').onclick = () => acct.user ? openFiles() : openAcct();
+
+async function loadFiles() {
+  const { data, error } = await sb.from('pdf_user_files').select('id,name,size,mime,path,created_at').order('created_at', { ascending: false });
+  if (error) throw error; acct.files = data || []; acct.fresh = true; return acct.files;
+}
+const when = iso => new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+function renderFiles() {
+  const tot = acct.files.reduce((n, f) => n + f.size, 0);
+  $('#filesUse').textContent = `${acct.files.length} of ${MAX_SAVED} files saved · ${fmtBytes(tot)}`;
+  $('#filesEmpty').hidden = acct.files.length > 0;
+  $('#filesList').innerHTML = acct.files.map(f => `<li class="frow" data-id="${esc(f.id)}"><label class="fsel"><input type="checkbox" aria-label="Select ${esc(f.name)}"><span class="ftxt"><span class="fn">${esc(f.name)}</span><span class="meta">${fmtBytes(f.size)} · ${when(f.created_at)}</span></span></label><button type="button" class="btn" data-act="add">Add</button><button type="button" class="btn danger" data-act="del" aria-label="Delete ${esc(f.name)}">Delete</button></li>`).join('');
+  syncSel();
+}
+const syncSel = () => { $('#filesAdd').disabled = !$$('#filesList input:checked').length; };
+async function openFiles() {
+  $('#filesWho').textContent = `Signed in as ${acct.user.email}.`; $('#autoSave').checked = acct.auto; $('#filesMsg').textContent = ''; renderFiles();
+  openModal($('#filesDlg'), $('#filesClose'));
+  try { $('#filesMsg').textContent = 'Loading…'; await loadFiles(); renderFiles(); $('#filesMsg').textContent = ''; }
+  catch (err) { console.error(err); $('#filesMsg').textContent = 'Couldn’t load your files. Try again in a moment.'; }
+}
+$('#autoSave').onchange = e => { acct.auto = e.target.checked; try { localStorage.setItem('asc_pdf_autosave', acct.auto ? '1' : '0'); } catch {} };
+$('#filesClose').onclick = () => closeModal($('#filesDlg'));
+$('#filesOut').onclick = async () => { await sb.auth.signOut(); closeModal($('#filesDlg')); toast('Signed out.'); };
+$('#filesList').addEventListener('change', syncSel);
+async function useFiles(rows) {
+  const msg = $('#filesMsg'); msg.textContent = 'Opening…'; const out = [];
+  try { for (const r of rows) { const { data, error } = await sb.storage.from(BUCKET).download(r.path); if (error) throw error; out.push(new File([data], r.name, { type: r.mime || data.type })); } }
+  catch (err) { console.error(err); msg.textContent = 'Couldn’t open that file. Try again.'; return; }
+  closeModal($('#filesDlg')); st.intent = null; await addFiles(out, { fromAccount: true });
+}
+$('#filesAdd').onclick = () => useFiles($$('#filesList li').filter(li => $('input', li).checked).map(li => acct.files.find(f => f.id === li.dataset.id)).filter(Boolean));
+$('#filesList').addEventListener('click', async e => {
+  const b = e.target.closest('[data-act]'); if (!b) return; const row = acct.files.find(f => f.id === b.closest('li').dataset.id); if (!row) return;
+  if (b.dataset.act === 'add') { useFiles([row]); return; }
+  if (b.dataset.armed !== '1') { b.dataset.armed = '1'; b.textContent = 'Confirm'; setTimeout(() => { if (b.isConnected) { b.dataset.armed = ''; b.textContent = 'Delete'; } }, 4000); return; }
+  b.disabled = true;
+  try {
+    let r = await sb.storage.from(BUCKET).remove([row.path]); if (r.error) throw r.error;
+    r = await sb.from('pdf_user_files').delete().eq('id', row.id); if (r.error) throw r.error;
+    acct.files = acct.files.filter(f => f.id !== row.id); renderFiles(); $('#filesMsg').textContent = `Deleted ${row.name}.`;
+  } catch (err) { console.error(err); b.disabled = false; $('#filesMsg').textContent = 'Couldn’t delete that file. Try again.'; }
+});
+let saveChain = Promise.resolve();
+function saveUploads(files) { if (sb && acct.user && acct.auto) saveChain = saveChain.then(() => doSave(files)).catch(console.error); }
+async function doSave(files) {
+  let saved = 0, full = false, tooBig = false, failed = false;
+  try { if (!acct.fresh) await loadFiles(); } catch { return; }
+  for (const f of files) {
+    if (acct.files.some(x => x.name === f.name && x.size === f.size)) continue;
+    if (f.size > (pro.active ? MAX_SAVED_BYTES : FREE.bytes)) { tooBig = true; continue; }
+    if (acct.files.length >= MAX_SAVED) { full = true; break; }
+    const safe = f.name.replace(/[^A-Za-z0-9._-]+/g, '_').slice(-100) || 'file', path = `${acct.user.id}/${crypto.randomUUID()}-${safe}`;
+    try {
+      const up = await sb.storage.from(BUCKET).upload(path, f, { contentType: f.type || 'application/octet-stream', upsert: false }); if (up.error) throw up.error;
+      const ins = await sb.from('pdf_user_files').insert({ name: f.name, size: f.size, mime: f.type || null, path }).select('id,name,size,mime,path,created_at').single();
+      if (ins.error) { await sb.storage.from(BUCKET).remove([path]); throw ins.error; }
+      acct.files.unshift(ins.data); saved++;
+    } catch (err) { console.error(err); failed = true; }
+  }
+  if (saved) toast(`Saved ${saved} file${saved > 1 ? 's' : ''} to your account.`);
+  else if (full) toast(`Your account is full (${MAX_SAVED} files). Delete some in My Files to save more.`);
+  else if (failed) toast('Couldn’t save that file to your account.');
+  else if (tooBig) toast('That file is too large to save to your account.');
+}
+syncAcct();
+
 buildTiles(); syncPro();
-if (CONFIG.devExpose) window.__asc = { setPro: v => { pro.active = v; pro.key = 'dev'; syncPro(); } };
+if (CONFIG.devExpose) window.__asc = { setPro: v => { pro.active = v; pro.key = 'dev'; syncPro(); }, sb };
 
 $('#outName').value = 'document.pdf';
 })();
