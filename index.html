@@ -1274,7 +1274,7 @@ let pdfOffer = null;
 async function sessionJwt() { const { data } = sb ? await sb.auth.getSession() : { data: null }; return (data && data.session && data.session.access_token) || ''; }
 const randText = c => 'R' + (c % 100 ? (c / 100).toFixed(2).replace('.', ',') : String(c / 100));
 async function loadPdfOffer() {
-  pdfOffer = null; $('#proDeal').hidden = true; $('#proHint').hidden = true; if (!CONFIG.apiBase || !acct.user) return;
+  pdfOffer = null; $('#proDeal').hidden = true; $('#proHint').hidden = true; if (!CONFIG.apiBase || !acct.user || !fromLedgerlyTab()) return;
   try {
     const jwt = await sessionJwt(); if (!jwt) return;
     const r = await fetch(CONFIG.apiBase + '/offer', { method: 'POST', headers: { authorization: 'Bearer ' + jwt } }), j = await r.json();
@@ -2313,7 +2313,10 @@ function dropAccountPro() { if (pro.key === 'account') { pro.active = false; pro
 /* ---------- moving between Ledgerly and this editor ---------- */
 // Arriving from Ledgerly with a one-time token after the #: sign in here as the same account, or ask which account to use.
 // The token is only believed when the visitor really came from Ledgerly, so a link on some other site cannot sign anyone in.
+// The Ledgerly special (cheaper PDF Pro) is only shown to someone who came here from their Ledgerly account. Remembered for this tab only.
+const fromLedgerlyTab = () => { try { return sessionStorage.getItem('asc_from_ledgerly') === '1'; } catch { return false; } };
 async function handleSsoArrival() {
+  try { if (new URL(document.referrer).origin === CONFIG.ledgerlyOrigin) sessionStorage.setItem('asc_from_ledgerly', '1'); } catch {}
   const h = new URLSearchParams(location.hash.replace(/^#/, '')), token = h.get('asc');
   if (!token) return;
   // "Claim the offer" in Ledgerly lands here with go=pro: once signed in, open the Pro window so the offer is one click from the payment page.
