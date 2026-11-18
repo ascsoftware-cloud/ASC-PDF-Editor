@@ -159,13 +159,6 @@ footer a{color:inherit}
 .modal{position:fixed;inset:0;background:rgba(10,20,15,.5);z-index:120;display:grid;place-items:center;padding:16px;overscroll-behavior:contain}
 .modal .panel{background:var(--surface);border-radius:14px;padding:16px;width:min(560px,100%);box-shadow:var(--shadow)}
 .modal h2{margin:0 0 4px}
-.addon{padding-bottom:12px}
-.addon .opt{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;margin:6px 0 0;border:1px solid var(--line);border-radius:12px;background:var(--surface);cursor:pointer;font-size:14px}
-.addon .opt input{width:20px;height:20px;margin:2px 0 0;accent-color:var(--accent-fg);flex:none}
-.addon .opt strong{display:block;font-weight:700}
-.addon .opt span{display:block;color:var(--muted);font-size:13px}
-.addon .opt:has(input:checked){border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
-.addon .sum{margin:10px 0 0;font-size:13px;font-weight:600;color:var(--ink)}
 .mtopts{display:flex;flex-wrap:wrap;gap:12px;margin:12px 0}
 .mtopts .field{min-width:150px;flex:1 1 150px}
 .mtopts .field input[type=text],.mtopts .field input[type=number]{width:100%}
@@ -224,9 +217,6 @@ footer a{color:inherit}
 .deal .big span{color:var(--ink);font-size:.95rem}
 .deal .fine{margin:0;font-size:13px;color:var(--muted);line-height:1.45}
 .deal .go{margin-top:12px;width:100%}
-.promo{display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;padding:10px 16px;background:var(--accent);color:var(--accent-ink);font-weight:700;font-size:14px;text-align:center}
-.promo .btn{min-height:36px;padding:0 14px;background:var(--accent-ink);border-color:var(--accent-ink);color:var(--accent)}
-.promo .x{appearance:none;background:none;border:0;color:inherit;font-size:20px;line-height:1;cursor:pointer;padding:4px 8px;opacity:.8}
 #ssoDlg .lede{margin:0 0 20px !important;line-height:1.55;overflow-wrap:anywhere}
 #ssoDlg .row{flex-direction:column;align-items:stretch;gap:12px;margin-top:0}
 #ssoDlg .row .btn{width:100%;min-height:48px;justify-content:center;text-align:center;overflow-wrap:anywhere;height:auto;padding:10px 16px}
@@ -339,7 +329,6 @@ a.btn{text-decoration:none}
 </svg>
 <a class="skip" href="#tool">Skip to the PDF tool</a>
 <noscript><p style="margin:0;padding:10px 16px;background:#fff3cd;color:#4a3b00;text-align:center">This PDF editor needs JavaScript. Turn it on in your browser to edit, merge, split, sign and convert PDFs.</p></noscript>
-<div id="promoBar" class="promo" hidden><span>Your first week of Ledgerly is free.</span><button type="button" class="btn" id="promoGo">Start my free week</button><button type="button" class="x" id="promoX" aria-label="Dismiss">&times;</button></div>
 <header class="top">
   <div class="brand"><svg class="mark" viewBox="0 0 64 64" role="img" aria-label="ASC Software logo"><use href="#asc-badge"/></svg><span><span translate="no">ASC Software</span><small>PDF Tools</small></span></div>
   <div class="hdr-actions"><span class="privacy">Core tools run on your device</span><span id="proBadge" class="pill" hidden>Pro</span><button type="button" class="sw" id="themeSw" role="switch" aria-checked="false" aria-label="Light mode"><span class="i l"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg></span><span class="i r"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></span><span class="k"><span class="kd"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg></span><span class="kl"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></span></span></button><button type="button" class="btn" id="ledgerlyBtn">Ledgerly</button><button type="button" class="btn primary" id="goPro">Get Pro</button><button type="button" class="btn" id="acctBtn" hidden>Sign in</button></div>
@@ -507,15 +496,6 @@ a.btn{text-decoration:none}
       <p class="fine" id="proDealFine"></p>
     </div>
     <p id="proPrice" style="font-weight:700;margin:0 0 14px" hidden></p>
-    <div id="proFree" class="deal addon" role="radiogroup" aria-labelledby="proFreeH">
-      <span class="tag">Free week</span>
-      <p class="head" id="proFreeH">Want Ledgerly too? Your first 7 days are free</p>
-      <label class="opt"><input type="radio" name="addL" value="" checked><div><strong>Just PDF Pro</strong><span>R44,99 a month</span></div></label>
-      <label class="opt"><input type="radio" name="addL" value="pro"><div><strong>PDF Pro + Ledgerly Pro</strong><span>Ledgerly is R0,00 for 7 days, then R299 a month</span></div></label>
-      <label class="opt"><input type="radio" name="addL" value="max"><div><strong>PDF Pro + Ledgerly Max</strong><span>Ledgerly is R0,00 for 7 days, then R599 a month</span></div></label>
-      <p class="sum" id="addSum"></p>
-      <p class="fine">You pay in two steps: PDF Pro now, then Ledgerly on a second PayFast page (R0,00 today). Cancel Ledgerly before day 8 and it costs nothing.</p>
-    </div>
     <div class="row">
       <button type="button" class="btn" id="proClose">Not Now</button>
       <button type="button" class="btn primary" id="proBuy">Get Pro</button>
@@ -542,12 +522,6 @@ a.btn{text-decoration:none}
       <p class="msg">Prefer email? Write to <strong id="earlyAddr"></strong> <button type="button" class="linkbtn" id="earlyCopy">Copy address</button></p>
     </form>
     <p id="proStatus" class="msg" role="status"></p>
-    <div id="proLedgerly" class="deal" hidden>
-      <span class="tag">Free week</span>
-      <p class="head">Your first week of Ledgerly is free</p>
-      <p class="fine">Ledgerly is ASC’s invoicing and business app, on this same account. Pay nothing for the first 7 days. On day 8 the normal monthly price starts, and you can cancel before then for free.</p>
-      <button type="button" class="btn primary go" id="proLedgerlyBtn">Start my free week</button>
-    </div>
   </div>
 </div>
 
@@ -1307,7 +1281,7 @@ async function loadPdfOffer() {
     pdfOffer = j; const saved = randText(j.discountCents * j.months);
     $('#proDealHead').textContent = `Save ${saved} on ASC PDF Pro`; $('#proDealWas').textContent = randText(j.priceCents); $('#proDealNow').textContent = randText(j.chargeCents);
     $('#proDealFor').textContent = `a month for ${j.months} months`; $('#proDealFine').textContent = `You get ${randText(j.discountCents)} off each month because you pay for Ledgerly. After ${j.months} months it is ${randText(j.priceCents)} a month. Cancel any time.`;
-    $('#proDeal').hidden = false; $('#proFree').hidden = true; setAddL(''); $('#proPrice').hidden = true; $('#proBuy').textContent = `Subscribe and save ${saved}`;
+    $('#proDeal').hidden = false; $('#proPrice').hidden = true; $('#proBuy').textContent = `Subscribe and save ${saved}`;
   } catch { /* the normal price is shown */ }
 }
 function openPro(feature) {
@@ -1316,7 +1290,7 @@ function openPro(feature) {
   const buy = $('#proBuy'); buy.hidden = false; buy.textContent = CONFIG.apiBase ? 'Subscribe now' : CONFIG.checkoutUrl ? 'Get Pro' : 'Request Early Access'; proFeature = feature || '';
   $('#buyForm').hidden = true; $('#buyMsg').textContent = ''; $('#buySend').disabled = false; $('#proBuyMsg').textContent = ''; buy.disabled = false;
   $('#earlyForm').hidden = true; $('#earlyMsg').textContent = ''; $('#earlySend').disabled = false; $('#earlyAddr').textContent = CONFIG.contactEmail;
-  $('#proStatus').textContent = ''; $('#proLedgerly').hidden = true; $('#proDeal').hidden = true; $('#proFree').hidden = false; setAddL(''); pdfOffer = null; openModal($('#proDlg'), buy); loadPdfOffer();
+  $('#proStatus').textContent = ''; $('#proDeal').hidden = true; pdfOffer = null; openModal($('#proDlg'), buy); loadPdfOffer();
 }
 let proFeature = '';
 $('#proBuy').onclick = () => {
@@ -1352,15 +1326,6 @@ async function api(path, body, headers) {
 }
 function saveLicence(key, exp) { try { localStorage.setItem('asc_pdf_licence', JSON.stringify({ key, exp: exp || new Date(Date.now() + 30 * 864e5).toISOString() })); } catch {} }
 function activateLicence(key, exp) { pro.active = true; pro.key = key; storedKey = key; saveLicence(key, exp); syncPro(); }
-const ADDL = { pro: ['Ledgerly Pro', 29900], max: ['Ledgerly Max', 59900] };
-function setAddL(v) { const r = document.querySelector(`#proFree input[value="${v}"]`); if (r) r.checked = true; updAddSum(); }
-function addL() { const r = document.querySelector('#proFree input:checked'); return r ? r.value : ''; }
-function updAddSum() {
-  const v = addL(), now = pdfOffer ? pdfOffer.chargeCents : 4499, t = $('#addSum');
-  t.textContent = v ? `Today: ${randText(now)} for PDF Pro. From day 8: ${randText(ADDL[v][1])} a month for ${ADDL[v][0]}, on top.` : `You pay ${randText(now)} a month for PDF Pro.`;
-  const b = $('#proBuy'); if (!pdfOffer && !$('#proBuy').disabled) b.textContent = v ? `Subscribe, then start ${ADDL[v][0]}` : 'Subscribe now';
-}
-$('#proFree').addEventListener('change', updAddSum);
 async function startPayfast(email, say, done) {
   say('Opening PayFast…');
   try {
@@ -1369,7 +1334,6 @@ async function startPayfast(email, say, done) {
     if (!ok || !j.action || !Array.isArray(j.fields)) { say(j.message || 'Couldn’t start the payment. Please try again.'); done(); return; }
     const f = document.createElement('form'); f.method = 'POST'; f.action = j.action;
     for (const [name, value] of j.fields) { const i = document.createElement('input'); i.type = 'hidden'; i.name = name; i.value = value; f.appendChild(i); }
-    try { const v = addL(); if (v) localStorage.setItem('asc_add_ledgerly', v); else localStorage.removeItem('asc_add_ledgerly'); } catch {}
     document.body.appendChild(f); f.submit();
   } catch { say('Couldn’t reach the payment server. Please try again in a moment.'); done(); }
 }
@@ -1394,15 +1358,7 @@ async function handlePaymentReturn() {
         activateLicence(j.key, j.expires);
         openPro(); $('#buyForm').hidden = true;
         $('#proStatus').textContent = 'Pro is active. Thank you! To use it on another device, sign in there with the email you paid with.';
-        $('#proFree').hidden = true; $('#proBuy').hidden = true;
-        let want = ''; try { want = localStorage.getItem('asc_add_ledgerly') || ''; localStorage.removeItem('asc_add_ledgerly'); } catch {}
-        if (ADDL[want]) {
-          const L = $('#proLedgerly'); L.querySelector('.tag').textContent = 'Step 2 of 2';
-          L.querySelector('.head').textContent = `Now start ${ADDL[want][0]}, free for 7 days`;
-          L.querySelector('.fine').textContent = `Pay nothing for 7 days. On day 8 the normal ${randText(ADDL[want][1])} a month starts. Press Get ${want === 'max' ? 'Max' : 'Pro'} on the next page: PayFast shows R0,00 today. Cancel before day 8 and you pay nothing.`;
-          $('#proLedgerlyBtn').textContent = `Start ${ADDL[want][0]}`;
-        }
-        $('#proLedgerly').hidden = false;
+        $('#proBuy').hidden = true;
         return;
       }
     } catch {}
@@ -1419,13 +1375,7 @@ async function refreshLicence() {
     else if (r.status !== 429 && j && j.valid === false) { pro.active = false; pro.key = ''; try { localStorage.removeItem('asc_pdf_licence'); } catch {} storedKey = ''; syncPro(); }
   } catch { /* offline or server busy: keep what we have */ }
 }
-function syncPromo() {
-  let off = false; try { off = localStorage.getItem('asc_promo_off') === '1'; } catch {}
-  $('#promoBar').hidden = off || !pro.active || pro.reason === 'asc' || pro.key === 'dev';
-}
-$('#promoX').onclick = () => { try { localStorage.setItem('asc_promo_off', '1'); } catch {} syncPromo(); };
-$('#promoGo').onclick = () => openLedgerly($('#promoGo'), null, 'plan');
-function syncPro() { syncPromo(); document.body.classList.toggle('is-pro', pro.active); $('#proBadge').hidden = !pro.active; $('#goPro').hidden = pro.active; }
+function syncPro() { document.body.classList.toggle('is-pro', pro.active); $('#proBadge').hidden = !pro.active; $('#goPro').hidden = pro.active; }
 $('#goPro').onclick = () => openPro(); $('#proClose').onclick = () => closeModal($('#proDlg'));
 let lastMode = 'keep';
 $('#mode').addEventListener('change', e => { if (e.target.value === 'low' && !gate('strong')) { e.target.value = lastMode; return; } lastMode = e.target.value; });
@@ -2405,7 +2355,6 @@ async function openLedgerly(btn, msg, next) {
 }
 $('#filesLedgerly').onclick = () => openLedgerly($('#filesLedgerly'), $('#filesMsg'));
 $('#ledgerlyBtn').onclick = () => openLedgerly($('#ledgerlyBtn'), null);
-$('#proLedgerlyBtn').onclick = () => openLedgerly($('#proLedgerlyBtn'), $('#proStatus'), 'plan');
 
 async function loadFiles() {
   const { data, error } = await sb.from('pdf_user_files').select('id,name,size,mime,path,created_at').order('created_at', { ascending: false });
