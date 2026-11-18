@@ -159,6 +159,13 @@ footer a{color:inherit}
 .modal{position:fixed;inset:0;background:rgba(10,20,15,.5);z-index:120;display:grid;place-items:center;padding:16px;overscroll-behavior:contain}
 .modal .panel{background:var(--surface);border-radius:14px;padding:16px;width:min(560px,100%);box-shadow:var(--shadow)}
 .modal h2{margin:0 0 4px}
+.addon{padding-bottom:12px}
+.addon .opt{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;margin:6px 0 0;border:1px solid var(--line);border-radius:12px;background:var(--surface);cursor:pointer;font-size:14px}
+.addon .opt input{width:20px;height:20px;margin:2px 0 0;accent-color:var(--accent-fg);flex:none}
+.addon .opt strong{display:block;font-weight:700}
+.addon .opt span{display:block;color:var(--muted);font-size:13px}
+.addon .opt:has(input:checked){border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.addon .sum{margin:10px 0 0;font-size:13px;font-weight:600;color:var(--ink)}
 .mtopts{display:flex;flex-wrap:wrap;gap:12px;margin:12px 0}
 .mtopts .field{min-width:150px;flex:1 1 150px}
 .mtopts .field input[type=text],.mtopts .field input[type=number]{width:100%}
@@ -500,10 +507,14 @@ a.btn{text-decoration:none}
       <p class="fine" id="proDealFine"></p>
     </div>
     <p id="proPrice" style="font-weight:700;margin:0 0 14px" hidden></p>
-    <div id="proFree" class="deal">
+    <div id="proFree" class="deal addon" role="radiogroup" aria-labelledby="proFreeH">
       <span class="tag">Free week</span>
-      <p class="head">Subscribe to PDF Pro and your first week of Ledgerly is free</p>
-      <p class="fine">Start Ledgerly Pro (R299 a month) or Max (R599 a month) and pay nothing for the first 7 days. On day 8 the normal price starts. Cancel before then and you pay nothing.</p>
+      <p class="head" id="proFreeH">Add Ledgerly too, and your first 7 days are free</p>
+      <label class="opt"><input type="radio" name="addL" value="" checked><div><strong>Just PDF Pro</strong><span>R44,99 a month</span></div></label>
+      <label class="opt"><input type="radio" name="addL" value="pro"><div><strong>PDF Pro + Ledgerly Pro</strong><span>Ledgerly is R0,00 for 7 days, then R299 a month</span></div></label>
+      <label class="opt"><input type="radio" name="addL" value="max"><div><strong>PDF Pro + Ledgerly Max</strong><span>Ledgerly is R0,00 for 7 days, then R599 a month</span></div></label>
+      <p class="sum" id="addSum"></p>
+      <p class="fine">PayFast takes each subscription on its own page: PDF Pro first, then Ledgerly. Cancel Ledgerly before day 8 and you pay nothing for it.</p>
     </div>
     <div class="row">
       <button type="button" class="btn" id="proClose">Not Now</button>
@@ -1296,16 +1307,16 @@ async function loadPdfOffer() {
     pdfOffer = j; const saved = randText(j.discountCents * j.months);
     $('#proDealHead').textContent = `Save ${saved} on ASC PDF Pro`; $('#proDealWas').textContent = randText(j.priceCents); $('#proDealNow').textContent = randText(j.chargeCents);
     $('#proDealFor').textContent = `a month for your first ${j.months} months`; $('#proDealFine').textContent = `${randText(j.discountCents)} off every month because you pay for Ledgerly. Then ${randText(j.priceCents)} a month. Cancel any time.`;
-    $('#proDeal').hidden = false; $('#proPrice').hidden = true; $('#proBuy').textContent = `Subscribe and save ${saved}`;
+    $('#proDeal').hidden = false; $('#proFree').hidden = true; setAddL(''); $('#proPrice').hidden = true; $('#proBuy').textContent = `Subscribe and save ${saved}`;
   } catch { /* the normal price is shown */ }
 }
 function openPro(feature) {
   $('#proWhy').textContent = WHY[feature] ? `Pro feature: ${WHY[feature]}.` : 'Pro unlocks the extra tools below.';
   $('#proPrice').textContent = CONFIG.price; $('#proPrice').hidden = !CONFIG.price;
-  const buy = $('#proBuy'); buy.textContent = CONFIG.apiBase ? 'Subscribe now' : CONFIG.checkoutUrl ? 'Get Pro' : 'Request Early Access'; proFeature = feature || '';
+  const buy = $('#proBuy'); buy.hidden = false; buy.textContent = CONFIG.apiBase ? 'Subscribe now' : CONFIG.checkoutUrl ? 'Get Pro' : 'Request Early Access'; proFeature = feature || '';
   $('#buyForm').hidden = true; $('#buyMsg').textContent = ''; $('#buySend').disabled = false; $('#proBuyMsg').textContent = ''; buy.disabled = false;
   $('#earlyForm').hidden = true; $('#earlyMsg').textContent = ''; $('#earlySend').disabled = false; $('#earlyAddr').textContent = CONFIG.contactEmail;
-  $('#proStatus').textContent = ''; $('#proLedgerly').hidden = true; $('#proDeal').hidden = true; pdfOffer = null; openModal($('#proDlg'), buy); loadPdfOffer();
+  $('#proStatus').textContent = ''; $('#proLedgerly').hidden = true; $('#proDeal').hidden = true; $('#proFree').hidden = false; setAddL(''); pdfOffer = null; openModal($('#proDlg'), buy); loadPdfOffer();
 }
 let proFeature = '';
 $('#proBuy').onclick = () => {
@@ -1341,6 +1352,15 @@ async function api(path, body, headers) {
 }
 function saveLicence(key, exp) { try { localStorage.setItem('asc_pdf_licence', JSON.stringify({ key, exp: exp || new Date(Date.now() + 30 * 864e5).toISOString() })); } catch {} }
 function activateLicence(key, exp) { pro.active = true; pro.key = key; storedKey = key; saveLicence(key, exp); syncPro(); }
+const ADDL = { pro: ['Ledgerly Pro', 29900], max: ['Ledgerly Max', 59900] };
+function setAddL(v) { const r = document.querySelector(`#proFree input[value="${v}"]`); if (r) r.checked = true; updAddSum(); }
+function addL() { const r = document.querySelector('#proFree input:checked'); return r ? r.value : ''; }
+function updAddSum() {
+  const v = addL(), now = pdfOffer ? pdfOffer.chargeCents : 4499, t = $('#addSum');
+  t.textContent = v ? `Today you pay ${randText(now)} for PDF Pro. From day 8 you also pay ${randText(ADDL[v][1])} a month for ${ADDL[v][0]}.` : `Today you pay ${randText(now)} a month for PDF Pro.`;
+  const b = $('#proBuy'); if (!pdfOffer && !$('#proBuy').disabled) b.textContent = v ? `Subscribe, then start ${ADDL[v][0]}` : 'Subscribe now';
+}
+$('#proFree').addEventListener('change', updAddSum);
 async function startPayfast(email, say, done) {
   say('Opening PayFast…');
   try {
@@ -1349,6 +1369,7 @@ async function startPayfast(email, say, done) {
     if (!ok || !j.action || !Array.isArray(j.fields)) { say(j.message || 'Couldn’t start the payment. Please try again.'); done(); return; }
     const f = document.createElement('form'); f.method = 'POST'; f.action = j.action;
     for (const [name, value] of j.fields) { const i = document.createElement('input'); i.type = 'hidden'; i.name = name; i.value = value; f.appendChild(i); }
+    try { const v = addL(); if (v) localStorage.setItem('asc_add_ledgerly', v); else localStorage.removeItem('asc_add_ledgerly'); } catch {}
     document.body.appendChild(f); f.submit();
   } catch { say('Couldn’t reach the payment server. Please try again in a moment.'); done(); }
 }
@@ -1373,6 +1394,14 @@ async function handlePaymentReturn() {
         activateLicence(j.key, j.expires);
         openPro(); $('#buyForm').hidden = true;
         $('#proStatus').textContent = 'Pro is active. Thank you! To use it on another device, sign in there with the email you paid with.';
+        $('#proFree').hidden = true; $('#proBuy').hidden = true;
+        let want = ''; try { want = localStorage.getItem('asc_add_ledgerly') || ''; localStorage.removeItem('asc_add_ledgerly'); } catch {}
+        if (ADDL[want]) {
+          const L = $('#proLedgerly'); L.querySelector('.tag').textContent = 'Step 2 of 2';
+          L.querySelector('.head').textContent = `Now start ${ADDL[want][0]}, free for 7 days`;
+          L.querySelector('.fine').textContent = `Pay nothing for 7 days. On day 8 the normal ${randText(ADDL[want][1])} a month starts. Press Get ${want === 'max' ? 'Max' : 'Pro'} on the next page: PayFast shows R0,00 today. Cancel before day 8 and you pay nothing.`;
+          $('#proLedgerlyBtn').textContent = `Start ${ADDL[want][0]}`;
+        }
         $('#proLedgerly').hidden = false;
         return;
       }
