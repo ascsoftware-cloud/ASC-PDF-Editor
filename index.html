@@ -2335,6 +2335,8 @@ function dropAccountPro() { if (pro.key === 'account') { pro.active = false; pro
 async function handleSsoArrival() {
   const h = new URLSearchParams(location.hash.replace(/^#/, '')), token = h.get('asc');
   if (!token) return;
+  // "Claim the offer" in Ledgerly lands here with go=pro: once signed in, open the Pro window so the offer is one click from the payment page.
+  const goPro = h.get('go') === 'pro', afterSso = async () => { if (!goPro) return; for (let i = 0; i < 25 && !acct.user; i++) await new Promise(r => setTimeout(r, 120)); openPro(); };
   history.replaceState(null, '', location.pathname + location.search);
   let fromLedgerly = false; try { fromLedgerly = new URL(document.referrer).origin === CONFIG.ledgerlyOrigin; } catch {}
   if (!sb || !fromLedgerly || !/^[A-Za-z0-9_-]{10,200}$/.test(token)) return;
@@ -2344,15 +2346,15 @@ async function handleSsoArrival() {
   if (!cur) {
     try { await signIn(); toast(other ? `Signed in as ${other}.` : 'Signed in.'); }
     catch (err) { console.error(err); toast('Couldn’t sign you in automatically. Use Sign in with your email.'); }
-    return;
+    afterSso(); return;
   }
-  if (!other || cur === other) return;
+  if (!other || cur === other) { afterSso(); return; }
   $('#ssoLede').textContent = `You’re signed in here as ${cur}, and you came from Ledgerly as ${other}.`;
   $('#ssoKeep').textContent = `Continue as ${cur}`; $('#ssoSwitch').textContent = `Switch to ${other}`; $('#ssoMsg').textContent = '';
-  $('#ssoKeep').onclick = () => closeModal($('#ssoDlg'));
+  $('#ssoKeep').onclick = () => { closeModal($('#ssoDlg')); afterSso(); };
   $('#ssoSwitch').onclick = async () => {
     $('#ssoSwitch').disabled = true; $('#ssoMsg').textContent = 'Switching…';
-    try { await signIn(); closeModal($('#ssoDlg')); toast(`Signed in as ${other}.`); }
+    try { await signIn(); closeModal($('#ssoDlg')); toast(`Signed in as ${other}.`); afterSso(); }
     catch (err) { console.error(err); $('#ssoMsg').textContent = 'Couldn’t switch. Your link may have expired: open the editor from Ledgerly again.'; }
     finally { $('#ssoSwitch').disabled = false; }
   };
