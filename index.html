@@ -243,7 +243,7 @@ a.btn{text-decoration:none}
 .seg{display:flex;gap:6px;margin:10px 0}
 .seg .btn[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
 .stack{display:grid;gap:10px;margin:10px 0}
-.field input[type=email],.field input[type=password],.field textarea{font:inherit;font-size:14px;font-weight:400;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:8px;min-height:40px;padding:0 10px;width:100%}
+.field input[type=email],.field input[type=password],.field input[type=text],.field textarea{font:inherit;font-size:14px;font-weight:400;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:8px;min-height:40px;padding:0 10px;width:100%}
 .field textarea{padding:8px 10px;min-height:72px;resize:vertical}
 .linkbtn{appearance:none;background:none;border:0;padding:4px 0;font:inherit;font-size:13px;color:var(--accent-fg);text-decoration:underline;cursor:pointer}
 .hp{position:absolute;left:-9999px;width:1px;height:1px;opacity:0;pointer-events:none}
@@ -477,18 +477,14 @@ a.btn{text-decoration:none}
 <!-- Account dialog -->
 <div id="acctDlg" class="modal" role="dialog" aria-modal="true" aria-labelledby="acctH" hidden>
   <div class="panel">
-    <h2 id="acctH">Sign in</h2>
+    <h2 id="acctH">Sign in with your ASC account</h2>
     <p id="acctLede" class="lede" style="margin:0 0 4px"></p>
-    <div class="seg" id="acctSeg" role="group" aria-label="Account action">
-      <button type="button" class="btn" data-mode="in" aria-pressed="true">Sign In</button>
-      <button type="button" class="btn" data-mode="up" aria-pressed="false">Create Account</button>
-    </div>
     <form id="acctForm" class="stack" novalidate>
       <label class="field" id="acctEmailWrap">Email<input type="email" id="acctEmail" name="email" autocomplete="email" spellcheck="false"></label>
-      <label class="field" id="acctPwWrap">Password<input type="password" id="acctPw" name="password" autocomplete="current-password"></label>
-      <div class="row"><button type="button" class="btn" id="acctCancel">Cancel</button><button type="submit" class="btn primary" id="acctGo">Sign In</button></div>
+      <label class="field" id="acctCodeWrap" hidden>6-digit code<input type="text" id="acctCode" name="code" inputmode="numeric" autocomplete="one-time-code" spellcheck="false" maxlength="12" placeholder="123456"></label>
+      <div class="row"><button type="button" class="btn" id="acctCancel">Cancel</button><button type="submit" class="btn primary" id="acctGo">Send Code</button></div>
     </form>
-    <p style="margin:0"><button type="button" class="linkbtn" id="acctForgot">Forgot password?</button></p>
+    <p style="margin:0"><button type="button" class="linkbtn" id="acctResend" hidden>Send a new code</button></p>
     <p id="acctMsg" class="msg" role="status"></p>
   </div>
 </div>
@@ -571,8 +567,8 @@ const CONFIG = {
   licenseEndpoint: 'https://ledgerly.ascsoftware.co.za/api/pdf/licence', // POST {key} -> {valid:true, expires:'2027-01-01T00:00:00Z'}. Empty = keys cannot be checked yet
   convertEndpoint: '',   // POST multipart {file, target, key} -> converted file bytes. Needs a server (Office, OCR)
   price: 'R44,99 per month. Cancel any time.', // shown in the Pro window. Empty hides the price line
-  supabaseUrl: 'https://npoltdukdxrjqdqyiqmb.supabase.co', // accounts, saved files and early-access requests
-  supabaseKey: 'sb_publishable_nlqR8OvqJzrpbYTJYsIwHQ_GYI284Og', // publishable key: safe in the page, protected by row level security
+  supabaseUrl: 'https://znufbvcjqdrpcyqiofrz.supabase.co', // the ASC account (the same one as Ledgerly) and saved files
+  supabaseKey: 'sb_publishable_TGDcdypQQ-7OKH3GnYpZcA_EHtRCm8M', // publishable key: safe in the page, protected by row level security
   devExpose: false       // leave false in production
 };
 const FREE = { pages: 100, bytes: 25 * 1024 * 1024, batch: 5 };
@@ -1551,6 +1547,7 @@ const redirectUrl = () => /^https?:/.test(location.protocol) ? location.origin +
 function syncAcct() { const b = $('#acctBtn'); b.hidden = !sb; b.textContent = acct.user ? 'My Files' : 'Sign in'; }
 function authMsg(err) {
   const m = String((err && err.message) || '');
+  if (/otp|token|expired/i.test(m) || (/invalid/i.test(m) && !/email/i.test(m))) return 'That code didn’t work. Check it, or send a new one.';
   if (/invalid login/i.test(m)) return 'Email or password is wrong.';
   if (/not confirmed/i.test(m)) return 'Confirm your email first. Check your inbox for the link.';
   if (/already registered|already been registered/i.test(m)) return 'That email already has an account. Sign in instead.';
@@ -1559,45 +1556,43 @@ function authMsg(err) {
   if (/fetch|network/i.test(m)) return 'Couldn’t reach the server. Check your connection and try again.';
   return 'Something went wrong. Please try again.';
 }
-const MODES = {
-  in: { title: 'Sign in', go: 'Sign In', lede: 'Sign in to reuse the files you uploaded before.' },
-  up: { title: 'Create your account', go: 'Create Account', lede: 'A free account keeps up to 20 of your uploaded files so you can reuse them on any device.' },
-  reset: { title: 'Reset your password', go: 'Send Reset Link', lede: 'Enter your email and we’ll send a link to choose a new password.' },
-  newpw: { title: 'Choose a new password', go: 'Save Password', lede: 'Enter a new password for your account.' }
-};
-function setAcctMode(m) {
-  acct.mode = m; const c = MODES[m];
-  $('#acctH').textContent = c.title; $('#acctLede').textContent = c.lede; $('#acctGo').textContent = c.go; $('#acctMsg').textContent = '';
-  $('#acctSeg').hidden = m === 'reset' || m === 'newpw'; $('#acctEmailWrap').hidden = m === 'newpw'; $('#acctPwWrap').hidden = m === 'reset'; $('#acctForgot').hidden = m !== 'in';
-  $('#acctPw').autocomplete = m === 'in' ? 'current-password' : 'new-password';
-  $$('#acctSeg [data-mode]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.mode === m)));
+function setAcctStep(step) {
+  acct.step = step; const code = step === 'code';
+  $('#acctLede').textContent = code
+    ? `We emailed a 6-digit code to ${$('#acctEmail').value.trim()}. Enter it below.`
+    : 'One account for Ledgerly and ASC tools. We email you a 6-digit code, so there is no password to remember. New here? The same box creates your account.';
+  $('#acctEmailWrap').hidden = code; $('#acctCodeWrap').hidden = !code; $('#acctResend').hidden = !code;
+  $('#acctGo').textContent = code ? 'Sign In' : 'Send Code'; $('#acctMsg').textContent = '';
 }
-function openAcct(m = 'in') { setAcctMode(m); $('#acctPw').value = ''; openModal($('#acctDlg'), m === 'newpw' ? $('#acctPw') : $('#acctEmail')); }
-$('#acctSeg').addEventListener('click', e => { const b = e.target.closest('[data-mode]'); if (b) setAcctMode(b.dataset.mode); });
-$('#acctForgot').onclick = () => setAcctMode('reset'); $('#acctCancel').onclick = () => closeModal($('#acctDlg'));
+function openAcct() { setAcctStep('email'); $('#acctCode').value = ''; openModal($('#acctDlg'), $('#acctEmail')); }
+$('#acctCancel').onclick = () => closeModal($('#acctDlg'));
+async function sendAcctCode(email) { const { error } = await sb.auth.signInWithOtp({ email, options: { shouldCreateUser: true } }); if (error) throw error; }
 $('#acctForm').addEventListener('submit', async e => {
   e.preventDefault(); if (!sb) return;
-  const m = acct.mode, email = $('#acctEmail').value.trim(), pw = $('#acctPw').value, msg = $('#acctMsg'), go = $('#acctGo');
-  if (m !== 'newpw' && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { msg.textContent = 'Enter a valid email address.'; $('#acctEmail').focus(); return; }
-  if (m !== 'reset' && !pw) { msg.textContent = 'Enter your password.'; $('#acctPw').focus(); return; }
-  if ((m === 'up' || m === 'newpw') && pw.length < 8) { msg.textContent = 'Use a password of at least 8 characters.'; $('#acctPw').focus(); return; }
-  go.disabled = true; msg.textContent = 'One moment…';
-  try {
-    if (m === 'in') { const { error } = await sb.auth.signInWithPassword({ email, password: pw }); if (error) throw error; closeModal($('#acctDlg')); toast('Signed in.'); }
-    else if (m === 'up') {
-      const { data, error } = await sb.auth.signUp({ email, password: pw, options: { emailRedirectTo: redirectUrl() } }); if (error) throw error;
-      if (data.user && data.user.identities && !data.user.identities.length) msg.textContent = 'That email already has an account. Sign in instead.';
-      else if (data.session) { closeModal($('#acctDlg')); toast('Account created.'); }
-      else msg.textContent = 'Almost done. Check your email and click the link to confirm your account, then sign in.';
-    } else if (m === 'reset') { const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: redirectUrl() }); if (error) throw error; msg.textContent = 'If that email has an account, a reset link is on its way.'; }
-    else { const { error } = await sb.auth.updateUser({ password: pw }); if (error) throw error; closeModal($('#acctDlg')); toast('Password updated.'); }
-  } catch (err) { console.error(err); msg.textContent = authMsg(err); }
-  finally { go.disabled = false; $('#acctPw').value = ''; }
+  const msg = $('#acctMsg'), go = $('#acctGo'), email = $('#acctEmail').value.trim();
+  if (acct.step !== 'code') {
+    if (!EMAIL_RE.test(email)) { msg.textContent = 'Enter a valid email address.'; $('#acctEmail').focus(); return; }
+    go.disabled = true; msg.textContent = 'Sending your code…';
+    try { await sendAcctCode(email); setAcctStep('code'); $('#acctCode').focus(); }
+    catch (err) { console.error(err); msg.textContent = authMsg(err); }
+    finally { go.disabled = false; }
+    return;
+  }
+  const code = $('#acctCode').value.replace(/\s+/g, '');
+  if (!/^\d{6,8}$/.test(code)) { msg.textContent = 'Enter the 6-digit code from the email.'; $('#acctCode').focus(); return; }
+  go.disabled = true; msg.textContent = 'Checking…';
+  try { const { error } = await sb.auth.verifyOtp({ email, token: code, type: 'email' }); if (error) throw error; closeModal($('#acctDlg')); toast('Signed in.'); }
+  catch (err) { console.error(err); msg.textContent = authMsg(err); }
+  finally { go.disabled = false; }
 });
+$('#acctResend').onclick = async () => {
+  const msg = $('#acctMsg'); msg.textContent = 'Sending…';
+  try { await sendAcctCode($('#acctEmail').value.trim()); msg.textContent = 'A new code is on its way.'; } catch (err) { console.error(err); msg.textContent = authMsg(err); }
+};
 if (sb) {
   sb.auth.onAuthStateChange((ev, session) => {
     const prev = acct.user && acct.user.id; acct.user = session ? session.user : null; if ((acct.user && acct.user.id) !== prev) { acct.files = []; acct.fresh = false; }
-    syncAcct(); if (ev === 'PASSWORD_RECOVERY') setTimeout(() => openAcct('newpw'), 0);
+    syncAcct();
   });
 }
 $('#acctBtn').onclick = () => acct.user ? openFiles() : openAcct();
