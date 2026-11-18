@@ -191,6 +191,11 @@ footer a{color:inherit}
 #proDlg .msg{margin-top:14px}
 #proDlg .msg:empty{display:none}
 #proDlg .keyrow{margin-top:22px;padding-top:18px}
+.oauth{display:grid;gap:10px;margin:14px 0 4px}
+.oauth .btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%}
+.oauth svg{width:18px;height:18px;flex:none}
+.or{display:flex;align-items:center;gap:12px;margin:10px 0 4px;color:var(--muted);font-size:13px}
+.or::before,.or::after{content:"";flex:1;height:1px;background:var(--line)}
 .keyrow{display:flex;gap:8px;align-items:end;margin-top:14px;flex-wrap:wrap;border-top:1px solid var(--line);padding-top:14px}
 .keyrow .field{flex:1 1 200px}
 .keyrow input{width:100%}
@@ -485,6 +490,8 @@ a.btn{text-decoration:none}
   <div class="panel">
     <h2 id="acctH">Sign in with your ASC account</h2>
     <p id="acctLede" class="lede" style="margin:0 0 4px"></p>
+    <div id="acctOauth" class="oauth" hidden></div>
+    <p id="acctOr" class="or" hidden>or use your email</p>
     <form id="acctForm" class="stack" novalidate>
       <label class="field" id="acctEmailWrap">Email<input type="email" id="acctEmail" name="email" autocomplete="email" spellcheck="false"></label>
       <label class="field" id="acctCodeWrap" hidden>6-digit code<input type="text" id="acctCode" name="code" inputmode="numeric" autocomplete="one-time-code" spellcheck="false" maxlength="12" placeholder="123456"></label>
@@ -1568,7 +1575,7 @@ const BUCKET = 'pdf-user-files', MAX_SAVED = 20, MAX_SAVED_BYTES = 50 * 1024 * 1
 const acct = { user: null, files: [], fresh: false, mode: 'in', auto: true };
 try { acct.auto = localStorage.getItem('asc_pdf_autosave') !== '0'; } catch {}
 let sb = null;
-try { if (CONFIG.supabaseUrl && CONFIG.supabaseKey && window.supabase) sb = window.supabase.createClient(CONFIG.supabaseUrl, CONFIG.supabaseKey); } catch (e) { console.error(e); }
+try { if (CONFIG.supabaseUrl && CONFIG.supabaseKey && window.supabase) sb = window.supabase.createClient(CONFIG.supabaseUrl, CONFIG.supabaseKey, { auth: { flowType: 'pkce' } }); } catch (e) { console.error(e); }
 const redirectUrl = () => /^https?:/.test(location.protocol) ? location.origin + location.pathname : undefined;
 function syncAcct() { const b = $('#acctBtn'); b.hidden = !sb; b.textContent = acct.user ? 'My Files' : 'Sign in'; }
 function authMsg(err) {
@@ -1586,11 +1593,33 @@ function setAcctStep(step) {
   acct.step = step; const code = step === 'code';
   $('#acctLede').textContent = code
     ? `We emailed a 6-digit code to ${$('#acctEmail').value.trim()}. Enter it below.`
-    : 'One account for Ledgerly and ASC tools. We email you a 6-digit code, so there is no password to remember. New here? The same box creates your account.';
+    : 'One account for Ledgerly and ASC tools. Continue with a provider, or we email you a 6-digit code, so there is no password to remember. New here? Either way creates your account.';
   $('#acctEmailWrap').hidden = code; $('#acctCodeWrap').hidden = !code; $('#acctResend').hidden = !code;
   $('#acctGo').textContent = code ? 'Sign In' : 'Send Code'; $('#acctMsg').textContent = '';
 }
-function openAcct() { setAcctStep('email'); $('#acctCode').value = ''; openModal($('#acctDlg'), $('#acctEmail')); }
+function openAcct() { setAcctStep('email'); $('#acctCode').value = ''; openModal($('#acctDlg'), $('#acctEmail')); loadOauth(); }
+// Sign in with another service. Only the providers switched on for the ASC account are offered, so a new one appears here by itself
+// as soon as it is enabled; there is nothing to change in this page.
+const OAUTH = {
+  google: { label: 'Google', icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.4h6.5a5.6 5.6 0 0 1-2.4 3.6v3h3.9c2.3-2.1 3.5-5.2 3.5-8.7z"/><path fill="#34A853" d="M12 24c3.2 0 6-1.1 8-2.9l-3.9-3c-1.1.7-2.5 1.2-4.1 1.2-3.1 0-5.8-2.1-6.7-5H1.2v3.1A12 12 0 0 0 12 24z"/><path fill="#FBBC05" d="M5.3 14.3a7.2 7.2 0 0 1 0-4.6V6.6H1.2a12 12 0 0 0 0 10.8l4.1-3.1z"/><path fill="#EA4335" d="M12 4.8c1.8 0 3.3.6 4.6 1.8l3.4-3.4A12 12 0 0 0 1.2 6.6l4.1 3.1c.9-2.9 3.6-4.9 6.7-4.9z"/></svg>' },
+  azure: { label: 'Microsoft', icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#F25022" d="M2 2h9.5v9.5H2z"/><path fill="#7FBA00" d="M12.5 2H22v9.5h-9.5z"/><path fill="#00A4EF" d="M2 12.5h9.5V22H2z"/><path fill="#FFB900" d="M12.5 12.5H22V22h-9.5z"/></svg>' },
+  apple: { label: 'Apple', icon: '' }, github: { label: 'GitHub', icon: '' }, facebook: { label: 'Facebook', icon: '' }, linkedin_oidc: { label: 'LinkedIn', icon: '' }, discord: { label: 'Discord', icon: '' }
+};
+let oauthLoaded = false;
+async function loadOauth() {
+  if (oauthLoaded || !sb) return; oauthLoaded = true;
+  let on = [];
+  try { const r = await fetch(CONFIG.supabaseUrl + '/auth/v1/settings', { headers: { apikey: CONFIG.supabaseKey } }), j = await r.json(); on = Object.keys(OAUTH).filter(k => j && j.external && j.external[k] === true); } catch { oauthLoaded = false; }
+  $('#acctOauth').innerHTML = on.map(k => `<button type="button" class="btn" data-provider="${k}">${OAUTH[k].icon}<span>Continue with ${OAUTH[k].label}</span></button>`).join('');
+  $('#acctOauth').hidden = !on.length; $('#acctOr').hidden = !on.length;
+}
+$('#acctOauth').addEventListener('click', async e => {
+  const b = e.target.closest('[data-provider]'), p = b && OAUTH[b.dataset.provider]; if (!p || !sb) return;
+  b.disabled = true; $('#acctMsg').textContent = `Opening ${p.label}…`;
+  const { error } = await sb.auth.signInWithOAuth({ provider: b.dataset.provider, options: { redirectTo: redirectUrl() } });
+  if (error) { console.error(error); b.disabled = false; $('#acctMsg').textContent = `Couldn’t open ${p.label}. Try again, or use your email.`; }
+}); 
+
 $('#acctCancel').onclick = () => closeModal($('#acctDlg'));
 async function sendAcctCode(email) { const { error } = await sb.auth.signInWithOtp({ email, options: { shouldCreateUser: true } }); if (error) throw error; }
 $('#acctForm').addEventListener('submit', async e => {
@@ -1744,6 +1773,11 @@ async function doSave(files) {
 syncAcct();
 
 buildTiles(); syncPro(); refreshLicence(); handlePaymentReturn(); handleSsoArrival();
+(function () {
+  const q = new URLSearchParams(location.search + '&' + location.hash.replace(/^#/, '')), d = q.get('error_description');
+  if (!d) return; history.replaceState(null, '', location.pathname);
+  toast('Sign-in didn’t work: ' + d.replace(/\+/g, ' ').slice(0, 140) + '. You can also use your email.');
+})();
 if (CONFIG.devExpose) window.__asc = { setPro: v => { pro.active = v; pro.key = 'dev'; syncPro(); }, sb };
 
 $('#outName').value = 'document.pdf';
