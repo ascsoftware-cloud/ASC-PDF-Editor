@@ -367,13 +367,13 @@ a.btn{text-decoration:none}
 
   <section class="faq" aria-labelledby="faqh">
     <h2 id="faqh">Frequently Asked Questions</h2>
-    <details><summary>Are my files uploaded anywhere?</summary><p>Not unless you choose to. PDFs are opened, edited, merged, split and converted to Word, images or text inside your browser, so nothing is sent to a server. If you sign in and keep “Save files I upload to my account” on, your uploads are stored in private storage that only your account can open. The Pro conversions to Excel and PowerPoint, and OCR, are processed on our server, and the page tells you before it sends a file.</p></details>
-    <details><summary>Is this PDF editor really free?</summary><p>Yes. Editing, merging, splitting, rotating, signing, basic compression, JPG and PNG conversion and PDF to Word are free, with no watermark and no account. Pro adds larger files, OCR, Excel and PowerPoint conversion, batch work and a few extras.</p></details>
+    <details><summary>Are my files uploaded anywhere?</summary><p>Not unless you choose to. PDFs are opened, edited, merged, split and converted to Word, images or text inside your browser, so nothing is sent to a server. If you sign in and keep “Save files I upload to my account” on, your uploads are stored in private storage that only your account can open.</p></details>
+    <details><summary>Is this PDF editor really free?</summary><p>Yes. Editing, merging, splitting, rotating, signing, basic compression, JPG and PNG conversion and PDF to Word are free, with no watermark and no account. Pro adds larger files, batch work, strong compression, page numbers and watermarks.</p></details>
     <details><summary>Can I edit a PDF without Adobe Acrobat?</summary><p>Yes. Open your PDF here in any modern browser, add text, highlights, whiteout, images or a signature, then download the result. Nothing needs to be installed.</p></details>
     <details><summary>Does it work on my phone?</summary><p>Yes. The editor works in the browser on phones and tablets as well as on computers.</p></details>
     <details><summary>Do I need an account?</summary><p>No. Every free tool works without one. A free account saves up to 20 of the files you upload, up to 25&nbsp;MB each, so you can add them again from My Files on any device. You can delete saved files at any time.</p></details>
-    <details><summary>How good is PDF to Word?</summary><p>It keeps the text, reading order, heading sizes, indents and page breaks, and the result opens and edits in Word. Images, tables and exact layout are not recreated, and scanned PDFs need OCR (Pro) first.</p></details>
-    <details><summary>What does Pro include?</summary><p>PDF to Word is free. Pro adds documents over 100 pages and files over 25&nbsp;MB, conversion from PDF to Excel and PowerPoint and from Office files to PDF, OCR for scanned PDFs, batch splitting and converting, strong compression, page numbers and watermarks.</p></details>
+    <details><summary>How good is PDF to Word?</summary><p>It keeps the text, reading order, heading sizes, indents and page breaks, and the result opens and edits in Word. Images, tables and exact layout are not recreated, and scanned PDFs (pictures of text) can’t be read yet.</p></details>
+    <details><summary>What does Pro include?</summary><p>PDF to Word is free. Pro adds documents over 100 pages and files over 25&nbsp;MB, batch splitting and converting, strong compression, page numbers and watermarks.</p></details>
     <details><summary>How do I merge PDFs?</summary><p>Add several PDFs, drag the pages into the order you want, then choose Download PDF.</p></details>
     <details><summary>How do I split a PDF or extract pages?</summary><p>Tick the pages you want, then choose Download Selected. To remove pages, select them and choose Delete.</p></details>
     <details><summary>How do I sign a PDF?</summary><p>Open a page with the pencil button, choose Signature, draw it, then drag it into place and resize it.</p></details>
@@ -443,8 +443,6 @@ a.btn{text-decoration:none}
     <p id="proWhy" class="lede" style="margin:0 0 4px"></p>
     <ul class="plist">
       <li>Documents over 100 pages and files over 25&nbsp;MB</li>
-      <li>Convert PDF to Excel and PowerPoint, and Word, Excel or PowerPoint files to PDF</li>
-      <li>OCR for scanned PDFs</li>
       <li>Batch work: split into many files and convert several files at once</li>
       <li>Strong compression, page numbers and watermarks</li>
     </ul>
@@ -1332,7 +1330,7 @@ $('#spRange').onclick = async () => {
 
 /* ---------- convert ---------- */
 const TARGETS = {
-  pdf: [{ id: 'jpg', label: 'JPG images' }, { id: 'png', label: 'PNG images' }, { id: 'txt', label: 'Plain text' }, { id: 'docx', label: 'Word (.docx)' }, { id: 'xlsx', label: 'Excel', pro: 'office' }, { id: 'pptx', label: 'PowerPoint', pro: 'office' }, { id: 'ocr', label: 'Searchable PDF (OCR)', pro: 'ocr' }],
+  pdf: [{ id: 'jpg', label: 'JPG images' }, { id: 'png', label: 'PNG images' }, { id: 'txt', label: 'Plain text' }, { id: 'docx', label: 'Word (.docx)' }],
   image: [{ id: 'png', label: 'PNG' }, { id: 'jpg', label: 'JPG' }, { id: 'webp', label: 'WebP' }],
   office: [{ id: 'pdf', label: 'PDF', pro: 'office' }]
 };
@@ -1463,6 +1461,7 @@ async function serverConvert(file, target) {
 }
 $('#convGo').onclick = async () => {
   const t = TARGETS[conv.kind].find(x => x.id === conv.target), msg = $('#convMsg'); if (!conv.files.length || conv.busy) return;
+  if (t.pro && !CONFIG.convertEndpoint) { msg.textContent = 'This conversion is coming soon.'; return; }
   if (t.pro && !gate(t.pro)) return;
   if (conv.files.length > FREE.batch && !gate('batch')) return;
   conv.busy = true; $('#convGo').disabled = true; const out = [];
@@ -1473,11 +1472,11 @@ $('#convGo').onclick = async () => {
       if (t.pro) out.push(await serverConvert(f, t.id));
       else if (conv.kind === 'pdf' && t.id === 'txt') {
         const tx = await pdfToText(f);
-        if (tx === null) { msg.textContent = `No text found in ${f.name}. It may be a scan, and OCR (Pro) can read it.`; continue; }
+        if (tx === null) { msg.textContent = `No text found in ${f.name}. It may be a scan, and this tool can’t read scans yet.`; continue; }
         out.push({ name: f.name.replace(/\.pdf$/i, '') + '.txt', data: new TextEncoder().encode(tx) });
       } else if (conv.kind === 'pdf' && t.id === 'docx') {
         const d = await pdfToDocx(f, (n, m) => { msg.textContent = `File ${i + 1} of ${conv.files.length}: page ${n} of ${m}…`; });
-        if (!d) { msg.textContent = `No text found in ${f.name}. It may be a scan, and OCR (Pro) can read it.`; continue; }
+        if (!d) { msg.textContent = `No text found in ${f.name}. It may be a scan, and this tool can’t read scans yet.`; continue; }
         out.push(d);
       } else if (conv.kind === 'pdf') out.push(...await pdfToImages(f, t.id, (n, m) => { msg.textContent = `File ${i + 1} of ${conv.files.length}: page ${n} of ${m}…`; }));
       else out.push(await imageConvert(f, t.id));
@@ -1525,15 +1524,15 @@ const TOOLS = [
   { g: 'Convert', id: 'pdf2txt', icon: 'text', name: 'PDF to Text', desc: 'Pull out the text' },
   { g: 'Convert', id: 'imgconv', icon: 'swap', name: 'Image Converter', desc: 'PNG, JPG and WebP' },
   { g: 'Convert', id: 'pdf2word', icon: 'word', name: 'PDF to Word', desc: 'Editable .docx' },
-  { g: 'Convert', id: 'pdf2excel', icon: 'excel', name: 'PDF to Excel', desc: 'Tables to .xlsx', pro: 'office' },
-  { g: 'Convert', id: 'pdf2ppt', icon: 'ppt', name: 'PDF to PowerPoint', desc: 'Slides as .pptx', pro: 'office' },
-  { g: 'Convert', id: 'word2pdf', icon: 'word', name: 'Office to PDF', desc: 'Word, Excel, PowerPoint', pro: 'office' },
-  { g: 'Convert', id: 'ocr', icon: 'ocr', name: 'OCR Scanned PDF', desc: 'Make scans searchable', pro: 'ocr' }
+  { g: 'Convert', id: 'pdf2excel', icon: 'excel', name: 'PDF to Excel', desc: 'Tables to .xlsx', soon: true },
+  { g: 'Convert', id: 'pdf2ppt', icon: 'ppt', name: 'PDF to PowerPoint', desc: 'Slides as .pptx', soon: true },
+  { g: 'Convert', id: 'word2pdf', icon: 'word', name: 'Office to PDF', desc: 'Word, Excel, PowerPoint', soon: true },
+  { g: 'Convert', id: 'ocr', icon: 'ocr', name: 'OCR Scanned PDF', desc: 'Make scans searchable', soon: true }
 ];
 function buildTiles() {
   const groups = [...new Set(TOOLS.map(t => t.g))];
   $('#toolGroups').innerHTML = groups.map(g => `<h3 class="tgroup">${esc(g)}</h3><ul class="tiles">` + TOOLS.filter(t => t.g === g).map(t =>
-    `<li><button type="button" class="tile" data-tile="${t.id}"><svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[t.icon]}</svg><span class="t">${esc(t.name)}</span><span class="d">${esc(t.desc)}</span>${t.pro ? '<span class="pill">Pro</span>' : ''}</button></li>`).join('') + '</ul>').join('');
+    `<li><button type="button" class="tile" data-tile="${t.id}"><svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[t.icon]}</svg><span class="t">${esc(t.name)}</span><span class="d">${esc(t.desc)}</span>${t.pro ? '<span class="pill">Pro</span>' : ''}${t.soon ? '<span class="pill">Soon</span>' : ''}</button></li>`).join('') + '</ul>').join('');
 }
 function hint(msg) { const h = $('#hint'); h.textContent = msg || ''; h.hidden = !msg; }
 function scrollToTool() { $('#tool').scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' }); }
@@ -1555,6 +1554,7 @@ function runIntent(id) {
 }
 function startTool(id) {
   const t = TOOLS.find(x => x.id === id);
+  if (t && t.soon) { toast('This tool is coming soon.'); return; }
   if (CONVERT[id]) { openConvert(id); return; }
   if (t.pro && !gate(t.pro)) return;
   st.intent = id;
