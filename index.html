@@ -159,6 +159,23 @@ footer a{color:inherit}
 .modal{position:fixed;inset:0;background:rgba(10,20,15,.5);z-index:120;display:grid;place-items:center;padding:16px;overscroll-behavior:contain}
 .modal .panel{background:var(--surface);border-radius:14px;padding:16px;width:min(560px,100%);box-shadow:var(--shadow)}
 .modal h2{margin:0 0 4px}
+.mtopts{display:flex;flex-wrap:wrap;gap:12px;margin:12px 0}
+.mtopts .field{min-width:150px;flex:1 1 150px}
+.mtopts .field input[type=text],.mtopts .field input[type=number]{width:100%}
+.mtopts .mtchk{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;flex-basis:100%}
+.mtopts [hidden]{display:none!important}
+.mtout{margin:10px 0}
+.mtout ul{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.mtout li{display:flex;align-items:center;gap:12px;font-size:14px;min-width:0}
+.mtout img{width:72px;height:72px;object-fit:contain;border-radius:8px;border:1px solid var(--line);background:repeating-conic-gradient(#d9dee3 0 25%,#fff 0 50%) 0 0/16px 16px;flex:none}
+.mtout canvas{max-width:260px;width:100%;height:auto;border:1px solid var(--line);border-radius:10px;display:block}
+.mtout .qrbtns{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.sigtabs{display:flex;gap:8px;margin:8px 0 10px}
+.sigtabs .btn{flex:1}
+.sigtabs .btn[aria-pressed=true]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.sigrow{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end;margin:0 0 10px}
+.sigrow .field{flex:1 1 180px}
+.sigrow .field input[type=text]{width:100%}
 .sigpad{display:block;width:100%;height:auto;background:#fff;border:1px solid var(--line);border-radius:10px;touch-action:none;cursor:crosshair;margin:10px 0}
 .row{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
@@ -393,7 +410,7 @@ a.btn{text-decoration:none}
   <section class="faq" aria-labelledby="faqh">
     <h2 id="faqh">Frequently Asked Questions</h2>
     <details><summary>Are my files uploaded anywhere?</summary><p>Not unless you choose to. PDFs are opened, edited, merged, split and converted to Word, images or text inside your browser, so nothing is sent to a server. If you sign in and keep “Save files I upload to my account” on, your uploads are stored in private storage that only your account can open. OCR, Excel, PowerPoint and Office conversions also run in your browser; they download a helper the first time, and your files are not uploaded.</p></details>
-    <details><summary>Is this PDF editor really free?</summary><p>Yes. Editing, merging, splitting, rotating, signing, basic compression, JPG and PNG conversion and PDF to Word are free, with no watermark and no account. Pro adds larger files, OCR, Excel and PowerPoint conversion, batch work, strong compression, page numbers and watermarks.</p></details>
+    <details><summary>Is this PDF editor really free?</summary><p>Yes. Editing, merging, splitting, rotating, signing (draw, type or upload), basic compression, JPG and PNG conversion, PDF to Word and the image, QR code, audio and video tools are free, with no watermark and no account. Pro adds larger files, OCR, Excel and PowerPoint conversion, batch work, strong compression, page numbers and watermarks.</p></details>
     <details><summary>Can I edit a PDF without Adobe Acrobat?</summary><p>Yes. Open your PDF here in any modern browser, add text, highlights, whiteout, images or a signature, then download the result. Nothing needs to be installed.</p></details>
     <details><summary>Does it work on my phone?</summary><p>Yes. The editor works in the browser on phones and tablets as well as on computers.</p></details>
     <details><summary>Do I need an account?</summary><p>No. Every free tool works without one. A free account saves up to 20 of the files you upload, up to 25&nbsp;MB each, so you can add them again from My Files on any device. You can delete saved files at any time.</p></details>
@@ -451,6 +468,9 @@ a.btn{text-decoration:none}
 <div id="sigDlg" class="modal" role="dialog" aria-modal="true" aria-labelledby="sigH" hidden>
   <div class="panel">
     <h2 id="sigH">Draw Your Signature</h2>
+    <div class="sigtabs" role="group" aria-label="How to sign"><button type="button" class="btn" data-sig="draw" aria-pressed="true">Draw</button><button type="button" class="btn" data-sig="type" aria-pressed="false">Type</button><button type="button" class="btn" data-sig="up" aria-pressed="false">Upload</button></div>
+    <div class="sigrow" id="sigTypeRow" hidden><label class="field">Your name<input id="sigText" type="text" maxlength="40" autocomplete="off" spellcheck="false"></label><label class="field">Style<select id="sigFont"><option value="script">Script</option><option value="hand">Handwriting</option><option value="formal">Formal italic</option></select></label></div>
+    <div class="sigrow" id="sigUpRow" hidden><button type="button" class="btn" id="sigUpBtn">Choose a picture</button><input type="file" id="sigUpIn" accept="image/*" hidden><p class="msg" style="margin:0;flex:1 1 200px">A photo or scan of your signature on white paper works. The white is removed.</p></div>
     <canvas id="sigPad" class="sigpad" width="960" height="360" aria-label="Signature drawing area"></canvas>
     <div class="row">
       <button type="button" class="btn" id="sigClear">Clear</button>
@@ -578,6 +598,24 @@ a.btn{text-decoration:none}
     <div class="row">
       <button type="button" class="btn" id="convCancel">Close</button>
       <button type="button" class="btn primary" id="convGo" disabled>Convert &amp; Download</button>
+    </div>
+  </div>
+</div>
+
+<!-- Images, QR codes, audio and video -->
+<div id="mtDlg" class="modal" role="dialog" aria-modal="true" aria-labelledby="mtH" hidden>
+  <div class="panel wide">
+    <h2 id="mtH">Tool</h2>
+    <p class="lede" id="mtLede" style="margin:0 0 8px"></p>
+    <button type="button" class="btn" id="mtPick">Choose Files</button>
+    <input type="file" id="mtIn" multiple hidden>
+    <ul id="mtFiles" class="convfiles" aria-label="Chosen files"></ul>
+    <div id="mtOpts" class="mtopts"></div>
+    <div id="mtOut" class="mtout" aria-live="polite"></div>
+    <p id="mtMsg" class="msg" role="status"></p>
+    <div class="row">
+      <button type="button" class="btn" id="mtClose">Close</button>
+      <button type="button" class="btn primary" id="mtGo" disabled>Go</button>
     </div>
   </div>
 </div>
@@ -1148,20 +1186,49 @@ $('#imgIn').onchange = async e => {
 // signature
 const pad = $('#sigPad'), pctx = pad.getContext('2d'); let drawing = false, inked = false, last = null;
 function padPt(e) { const r = pad.getBoundingClientRect(); return [(e.clientX - r.left) * pad.width / r.width, (e.clientY - r.top) * pad.height / r.height]; }
-pad.addEventListener('pointerdown', e => { e.preventDefault(); pad.setPointerCapture(e.pointerId); drawing = true; last = padPt(e); pctx.beginPath(); pctx.arc(last[0], last[1], 2.5, 0, 7); pctx.fillStyle = '#10141f'; pctx.fill(); inked = true; });
+pad.addEventListener('pointerdown', e => { if (sigMode !== 'draw') return; e.preventDefault(); pad.setPointerCapture(e.pointerId); drawing = true; last = padPt(e); pctx.beginPath(); pctx.arc(last[0], last[1], 2.5, 0, 7); pctx.fillStyle = '#10141f'; pctx.fill(); inked = true; });
 pad.addEventListener('pointermove', e => { if (!drawing) return; const p = padPt(e); pctx.strokeStyle = '#10141f'; pctx.lineWidth = 5; pctx.lineCap = pctx.lineJoin = 'round'; pctx.beginPath(); pctx.moveTo(last[0], last[1]); pctx.lineTo(p[0], p[1]); pctx.stroke(); last = p; });
 ['pointerup', 'pointercancel'].forEach(t => pad.addEventListener(t, () => { drawing = false; }));
-function openSig() { pctx.clearRect(0, 0, pad.width, pad.height); inked = false; $('#sigDlg').hidden = false; $('#sigOk').focus(); }
+function openSig() { sigSet('draw'); $('#sigDlg').hidden = false; $('#sigOk').focus(); }
 function closeSig() { $('#sigDlg').hidden = true; $('#edSign').focus(); }
 $('#edSign').onclick = openSig; $('#sigCancel').onclick = closeSig;
-$('#sigClear').onclick = () => { pctx.clearRect(0, 0, pad.width, pad.height); inked = false; };
+$('#sigClear').onclick = () => { pctx.clearRect(0, 0, pad.width, pad.height); inked = false; $('#sigText').value = ''; };
 $('#sigOk').onclick = () => {
-  if (!inked) { toast('Draw your signature first.'); return; }
+  if (!inked) { toast(sigMode === 'type' ? 'Type your name first.' : sigMode === 'up' ? 'Choose a picture first.' : 'Draw your signature first.'); return; }
   const d = pctx.getImageData(0, 0, pad.width, pad.height).data; let x0 = pad.width, y0 = pad.height, x1 = 0, y1 = 0;
   for (let y = 0; y < pad.height; y++) for (let x = 0; x < pad.width; x++) if (d[(y * pad.width + x) * 4 + 3] > 10) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
   const pw = 8, w = x1 - x0 + 1 + pw * 2, h = y1 - y0 + 1 + pw * 2, c = document.createElement('canvas'); c.width = w; c.height = h;
   c.getContext('2d').drawImage(pad, x0 - pw, y0 - pw, w, h, 0, 0, w, h);
   closeSig(); placeImage(dataToBytes(c.toDataURL('image/png')), 'image/png', w, h);
+};
+
+// signature: draw it, type it, or upload a picture of it. All three land on the same pad, so adding it works the same way.
+let sigMode = 'draw';
+const SIGFONTS = { script: '{s}px "Segoe Script","Snell Roundhand","Brush Script MT","Apple Chancery",cursive', hand: '{s}px "Ink Free","Bradley Hand","Segoe Print","Chalkboard SE",cursive', formal: 'italic {s}px Georgia,"Times New Roman",serif' };
+function sigSet(m) {
+  sigMode = m; pctx.clearRect(0, 0, pad.width, pad.height); inked = false;
+  document.querySelectorAll('[data-sig]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.sig === m)));
+  $('#sigTypeRow').hidden = m !== 'type'; $('#sigUpRow').hidden = m !== 'up'; pad.style.cursor = m === 'draw' ? 'crosshair' : 'default';
+  $('#sigH').textContent = m === 'draw' ? 'Draw Your Signature' : m === 'type' ? 'Type Your Signature' : 'Upload Your Signature';
+  if (m === 'type') { $('#sigText').focus(); sigType(); }
+}
+function sigType() {
+  pctx.clearRect(0, 0, pad.width, pad.height); const t = $('#sigText').value.trim(); inked = !!t; if (!t) return;
+  let size = 190; do { pctx.font = SIGFONTS[$('#sigFont').value].replace('{s}', size); size -= 6; } while (pctx.measureText(t).width > pad.width - 60 && size > 30);
+  pctx.fillStyle = '#10141f'; pctx.textAlign = 'center'; pctx.textBaseline = 'middle'; pctx.fillText(t, pad.width / 2, pad.height / 2);
+}
+document.querySelectorAll('[data-sig]').forEach(b => { b.onclick = () => sigSet(b.dataset.sig); });
+$('#sigText').addEventListener('input', sigType); $('#sigFont').addEventListener('change', sigType);
+$('#sigUpBtn').onclick = () => $('#sigUpIn').click();
+$('#sigUpIn').onchange = async e => {
+  const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+  try {
+    const bmp = await createImageBitmap(f), s = Math.min((pad.width - 40) / bmp.width, (pad.height - 40) / bmp.height, 1), w = Math.round(bmp.width * s), h = Math.round(bmp.height * s);
+    pctx.clearRect(0, 0, pad.width, pad.height); pctx.drawImage(bmp, (pad.width - w) / 2, (pad.height - h) / 2, w, h);
+    const img = pctx.getImageData(0, 0, pad.width, pad.height), d = img.data;
+    for (let i = 0; i < d.length; i += 4) { const l = 0.3 * d[i] + 0.59 * d[i + 1] + 0.11 * d[i + 2], a = Math.max(0, Math.min(1, (225 - l) / 80)); d[i + 3] = Math.round(d[i + 3] * a); }
+    pctx.putImageData(img, 0, 0); inked = true;
+  } catch { toast('That picture could not be read.'); }
 };
 
 // keyboard
@@ -1790,6 +1857,300 @@ $('#convGo').onclick = async () => {
   } finally { conv.busy = false; renderConv(); }
 };
 
+/* ---------- more tools: images, QR codes, audio and video. Everything here runs on this device. ---------- */
+const mt = { id: '', files: [], busy: false, urls: [], qr: null };
+const bytesOf = async b => new Uint8Array(await b.arrayBuffer());
+const stem = n => n.replace(/[.][^.]+$/, '');
+const BS = String.fromCharCode(92);
+function loadBitmap(file) { return createImageBitmap(file).catch(() => { throw new Error('image'); }); }
+function drawn(bmp, w, h, flatten) {
+  const c = document.createElement('canvas'); c.width = w; c.height = h; const x = c.getContext('2d');
+  if (flatten) { x.fillStyle = '#fff'; x.fillRect(0, 0, w, h); }
+  x.imageSmoothingQuality = 'high'; x.drawImage(bmp, 0, 0, w, h); return c;
+}
+const FMT = { jpg: ['image/jpeg', 'jpg'], png: ['image/png', 'png'], webp: ['image/webp', 'webp'] };
+const fmtFor = (file, choice) => choice !== 'keep' ? choice : /png/.test(file.type) ? 'png' : /webp/.test(file.type) ? 'webp' : 'jpg';
+const sizeNote = (a, b) => `${fmtBytes(a)} to ${fmtBytes(b)}` + (b < a ? ` (${Math.round((1 - b / a) * 100)}% smaller)` : '');
+
+/* background removal: a small open model (U2-Net, Apache 2.0) that ships with this site and runs with onnxruntime-web */
+let bgSession = null;
+async function bgSess() {
+  if (bgSession) return bgSession;
+  const base = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.17.1/dist/';
+  await loadLib('ort', base + 'ort.min.js', () => window.ort);
+  ort.env.wasm.wasmPaths = base; ort.env.wasm.numThreads = 1; ort.env.wasm.proxy = false;
+  const r = await fetch('models/u2netp.onnx'); if (!r.ok) throw new Error('lib');
+  bgSession = await ort.InferenceSession.create(new Uint8Array(await r.arrayBuffer()), { executionProviders: ['wasm'] });
+  return bgSession;
+}
+async function removeBg(file, v) {
+  const s = await bgSess(), bmp = await loadBitmap(file), S = 320, n = S * S;
+  const d = drawn(bmp, S, S, false).getContext('2d').getImageData(0, 0, S, S).data, inp = new Float32Array(3 * n), mean = [0.485, 0.456, 0.406], sd = [0.229, 0.224, 0.225];
+  for (let i = 0; i < n; i++) for (let k = 0; k < 3; k++) inp[k * n + i] = (d[i * 4 + k] / 255 - mean[k]) / sd[k];
+  const res = await s.run({ [s.inputNames[0]]: new ort.Tensor('float32', inp, [1, 3, S, S]) }), m = res[s.outputNames[0]].data;
+  let lo = Infinity, hi = -Infinity; for (let i = 0; i < n; i++) { if (m[i] < lo) lo = m[i]; if (m[i] > hi) hi = m[i]; }
+  const mc = document.createElement('canvas'); mc.width = mc.height = S; const mx = mc.getContext('2d'), mi = mx.createImageData(S, S);
+  for (let i = 0; i < n; i++) { const a = (m[i] - lo) / (hi - lo || 1); mi.data[i * 4 + 3] = Math.round(Math.max(0, Math.min(1, (a - 0.15) / 0.6)) * 255); }
+  mx.putImageData(mi, 0, 0);
+  const k = Math.min(1, 3000 / Math.max(bmp.width, bmp.height)), w = Math.max(1, Math.round(bmp.width * k)), h = Math.max(1, Math.round(bmp.height * k));
+  const o = drawn(bmp, w, h, false), ox = o.getContext('2d'), img = ox.getImageData(0, 0, w, h);
+  const mk = document.createElement('canvas'); mk.width = w; mk.height = h; const kx = mk.getContext('2d'); kx.imageSmoothingQuality = 'high'; kx.drawImage(mc, 0, 0, w, h);
+  const md = kx.getImageData(0, 0, w, h).data;
+  for (let i = 0; i < w * h; i++) img.data[i * 4 + 3] = Math.min(img.data[i * 4 + 3], md[i * 4 + 3]);
+  ox.putImageData(img, 0, 0);
+  let out = o;
+  if (v.bg !== 'none') { out = document.createElement('canvas'); out.width = w; out.height = h; const cx = out.getContext('2d'); cx.fillStyle = v.bg === 'white' ? '#ffffff' : v.color; cx.fillRect(0, 0, w, h); cx.drawImage(o, 0, 0); }
+  const b = await toBlob(out, 'image/png'); if (!b) throw new Error('image');
+  return { name: stem(file.name) + '-no-background.png', data: await bytesOf(b), type: 'image/png', note: 'Check the edges, then use it anywhere.' };
+}
+
+/* QR codes */
+function qrText(v) {
+  const t = String(v.text || '').trim();
+  if (v.type === 'wifi') {
+    const esc = s => [...String(s || '')].map(ch => (ch === BS || ';,:"'.includes(ch)) ? BS + ch : ch).join(''), sec = v.sec;
+    return v.ssid ? `WIFI:T:${sec};S:${esc(v.ssid)};${sec === 'nopass' ? '' : 'P:' + esc(v.pass) + ';'};` : '';
+  }
+  if (v.type === 'wa') {
+    let d = String(v.phone || '').replace(/[^0-9]/g, ''); if (d.length === 10 && d[0] === '0') d = '27' + d.slice(1);
+    return d ? 'https://wa.me/' + d + (String(v.msg || '').trim() ? '?text=' + encodeURIComponent(String(v.msg).trim()) : '') : '';
+  }
+  if (v.type === 'email') return t ? 'mailto:' + t : '';
+  if (v.type === 'url' && t && !/^[a-z][a-z0-9+.-]*:/i.test(t)) return 'https://' + t;
+  return t;
+}
+function qrBuild(text, v) {
+  qrcode.stringToBytes = qrcode.stringToBytesFuncs['UTF-8'];
+  const q = qrcode(0, v.ec); q.addData(text); q.make();
+  const n = q.getModuleCount(), cell = Math.max(1, Math.round(+v.size / (n + 8))), px = cell * (n + 8);
+  const c = document.createElement('canvas'); c.width = c.height = px; const x = c.getContext('2d');
+  x.fillStyle = v.bg; x.fillRect(0, 0, px, px); x.fillStyle = v.fg;
+  let path = '';
+  for (let r = 0; r < n; r++) for (let col = 0; col < n; col++) if (q.isDark(r, col)) {
+    let e = col; while (e + 1 < n && q.isDark(r, e + 1)) e++;
+    x.fillRect((col + 4) * cell, (r + 4) * cell, (e - col + 1) * cell, cell);
+    path += `M${col + 4} ${r + 4}h${e - col + 1}v1h-${e - col + 1}z`; col = e;
+  }
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${n + 8} ${n + 8}" width="${px}" height="${px}" shape-rendering="crispEdges"><rect width="${n + 8}" height="${n + 8}" fill="${v.bg}"/><path d="${path}" fill="${v.fg}"/></svg>`;
+  return { canvas: c, svg };
+}
+const lum = hex => { const c = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16) / 255).map(u => u <= 0.03928 ? u / 12.92 : Math.pow((u + 0.055) / 1.055, 2.4)); return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]; };
+async function qrRefresh() {
+  const v = mtCollect(), out = $('#mtOut'), msg = $('#mtMsg'); msg.textContent = ''; mt.qr = null;
+  const text = qrText(v);
+  if (!text) { out.innerHTML = '<p class="msg">Fill in the details above and your QR code appears here.</p>'; return; }
+  try { await loadLib('qr', 'https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js', () => window.qrcode); } catch { msg.textContent = 'Couldn’t load the QR helper. Check your connection and try again.'; return; }
+  try { mt.qr = qrBuild(text, v); } catch { out.innerHTML = ''; msg.textContent = 'That is too much for one QR code. Shorten it.'; return; }
+  const a = lum(v.fg), b = lum(v.bg), ratio = (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+  out.innerHTML = '';
+  mt.qr.canvas.setAttribute('aria-label', 'Your QR code'); out.append(mt.qr.canvas);
+  const row = document.createElement('div'); row.className = 'qrbtns'; row.innerHTML = '<button type="button" class="btn primary" data-qr="png">Download PNG</button><button type="button" class="btn" data-qr="svg">Download SVG</button>'; out.append(row);
+  if (ratio < 3 || a > b) msg.textContent = 'A dark code on a light background scans best. These colours may not scan.';
+}
+$('#mtOut').addEventListener('click', async e => {
+  const b = e.target.closest('[data-qr]'); if (!b || !mt.qr) return;
+  if (b.dataset.qr === 'png') await saveBlob(await toBlob(mt.qr.canvas, 'image/png'), 'qr-code.png');
+  else await saveBlob(new Blob([mt.qr.svg], { type: 'image/svg+xml' }), 'qr-code.svg');
+});
+
+/* audio and video with ffmpeg, loaded only when one of these tools is used */
+let ff = null, ffSay = null;
+async function getFF(say) {
+  if (ff) return ff;
+  const lib = 'https://cdn.jsdelivr.net/npm/@ffmpeg/ffmpeg@0.12.10/dist/umd', core = 'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.6/dist/esm';
+  say('Getting the converter ready. The first time downloads about 10 MB…');
+  await loadLib('ffmpeg', lib + '/ffmpeg.js', () => window.FFmpegWASM);
+  const blobUrl = async (u, type) => URL.createObjectURL(new Blob([await (await fetch(u)).arrayBuffer()], { type }));
+  const f = new FFmpegWASM.FFmpeg();
+  f.on('progress', ({ progress }) => { if (ffSay && progress > 0 && progress <= 1) ffSay(`${Math.round(progress * 100)}% done…`); });
+  await f.load({ coreURL: await blobUrl(core + '/ffmpeg-core.js', 'text/javascript'), wasmURL: await blobUrl(core + '/ffmpeg-core.wasm', 'application/wasm'), classWorkerURL: await blobUrl(lib + '/814.ffmpeg.js', 'text/javascript') });
+  ff = f; return f;
+}
+async function ffRun(file, args, outName, say) {
+  const f = await getFF(say), ext = ((/[.][a-z0-9]{1,5}$/i.exec(file.name) || ['.bin'])[0]).toLowerCase(), inName = 'input' + ext;
+  await f.writeFile(inName, new Uint8Array(await file.arrayBuffer())); ffSay = say; say('Converting. Keep this tab open…');
+  try {
+    const code = await f.exec(['-i', inName, ...args, outName]); if (code !== 0) throw new Error('media');
+    return new Uint8Array(await f.readFile(outName));
+  } finally { ffSay = null; try { await f.deleteFile(inName); } catch {} try { await f.deleteFile(outName); } catch {} }
+}
+const AUDIO = { mp3: { mime: 'audio/mpeg', args: br => ['-vn', '-c:a', 'libmp3lame', '-b:a', br + 'k'] }, m4a: { mime: 'audio/mp4', args: br => ['-vn', '-c:a', 'aac', '-b:a', br + 'k'] }, ogg: { mime: 'audio/ogg', args: br => ['-vn', '-c:a', 'vorbis', '-strict', '-2', '-ac', '2', '-b:a', br + 'k'] }, wav: { mime: 'audio/wav', args: () => ['-vn', '-c:a', 'pcm_s16le'] } };
+const audioRun = async (f, v, say) => { const t = AUDIO[v.fmt], name = stem(f.name) + '.' + v.fmt; const data = await ffRun(f, t.args(v.br), name, say); return { name, type: t.mime, data, note: fmtBytes(data.length) }; };
+const BITRATES = [['128', '128 kbps (smaller)'], ['192', '192 kbps (good)'], ['320', '320 kbps (best)']];
+
+/* what each tool asks for and does */
+const MEDIA = {
+  imgcompress: {
+    title: 'Compress Image', accept: 'image/*', go: 'Compress & Download', image: true,
+    lede: 'Make photos smaller to email or upload. Pick a quality, and optionally a smaller size. The files stay on your device.',
+    opts: [
+      { id: 'q', label: 'Quality', type: 'select', val: '0.75', list: [['0.9', 'High (larger file)'], ['0.75', 'Balanced'], ['0.55', 'Small'], ['0.4', 'Smallest']] },
+      { id: 'max', label: 'Longest side', type: 'select', val: '0', list: [['0', 'Keep original size'], ['3000', '3000 px'], ['2000', '2000 px'], ['1600', '1600 px'], ['1200', '1200 px'], ['800', '800 px']] },
+      { id: 'fmt', label: 'Save as', type: 'select', val: 'jpg', list: [['jpg', 'JPG'], ['webp', 'WebP'], ['keep', 'Same as original']] }
+    ],
+    async run(f, v) {
+      const bmp = await loadBitmap(f), max = +v.max; let w = bmp.width, h = bmp.height;
+      if (max && Math.max(w, h) > max) { const s = max / Math.max(w, h); w = Math.round(w * s); h = Math.round(h * s); }
+      const fmt = fmtFor(f, v.fmt), b = await toBlob(drawn(bmp, w, h, fmt === 'jpg'), FMT[fmt][0], +v.q); if (!b) throw new Error('image');
+      const data = await bytesOf(b);
+      if (data.length >= f.size && w === bmp.width && fmt === fmtFor(f, 'keep')) return { name: f.name, type: f.type, data: await bytesOf(f), note: 'Already about as small as it gets, so it is unchanged.' };
+      return { name: stem(f.name) + '-small.' + FMT[fmt][1], type: FMT[fmt][0], data, note: sizeNote(f.size, data.length) };
+    }
+  },
+  imgresize: {
+    title: 'Resize Image', accept: 'image/*', go: 'Resize & Download', image: true,
+    lede: 'Set a new width and height, or shrink or enlarge by a percentage. The files stay on your device.',
+    opts: [
+      { id: 'by', label: 'Resize by', type: 'select', val: 'px', list: [['px', 'Pixels'], ['pct', 'Percent']] },
+      { id: 'w', label: 'Width (px)', type: 'number', ph: 'Auto', when: 'by=px', min: 1, max: 8000 },
+      { id: 'h', label: 'Height (px)', type: 'number', ph: 'Auto', when: 'by=px', min: 1, max: 8000 },
+      { id: 'pct', label: 'Percent', type: 'number', val: '50', when: 'by=pct', min: 1, max: 400 },
+      { id: 'lock', label: 'Keep the proportions', type: 'check', val: true, when: 'by=px' },
+      { id: 'fmt', label: 'Save as', type: 'select', val: 'keep', list: [['keep', 'Same as original'], ['jpg', 'JPG'], ['png', 'PNG'], ['webp', 'WebP']] }
+    ],
+    async run(f, v) {
+      const bmp = await loadBitmap(f); let w, h;
+      if (v.by === 'pct') { const p = Math.max(1, Math.min(400, +v.pct || 100)) / 100; w = bmp.width * p; h = bmp.height * p; }
+      else {
+        const W = Math.round(+v.w) || 0, H = Math.round(+v.h) || 0; if (!W && !H) throw new Error('size');
+        if (W && H) { if (v.lock) { const s = Math.min(W / bmp.width, H / bmp.height); w = bmp.width * s; h = bmp.height * s; } else { w = W; h = H; } }
+        else if (W) { w = W; h = bmp.height * W / bmp.width; } else { h = H; w = bmp.width * H / bmp.height; }
+      }
+      w = Math.max(1, Math.min(8000, Math.round(w))); h = Math.max(1, Math.min(8000, Math.round(h)));
+      const fmt = fmtFor(f, v.fmt), b = await toBlob(drawn(bmp, w, h, fmt === 'jpg'), FMT[fmt][0], 0.92); if (!b) throw new Error('image');
+      const data = await bytesOf(b);
+      return { name: `${stem(f.name)}-${w}x${h}.${FMT[fmt][1]}`, type: FMT[fmt][0], data, note: `${bmp.width} x ${bmp.height} to ${w} x ${h} px, ${fmtBytes(data.length)}` };
+    }
+  },
+  heic2jpg: {
+    title: 'HEIC to JPG', accept: 'image/heic,image/heif,.heic,.heif,image/*', go: 'Convert & Download', image: true,
+    lede: 'Turn iPhone photos (HEIC) into JPG or PNG that opens everywhere. The files stay on your device.',
+    opts: [
+      { id: 'fmt', label: 'Convert to', type: 'select', val: 'jpg', list: [['jpg', 'JPG'], ['png', 'PNG']] },
+      { id: 'q', label: 'Quality', type: 'select', val: '0.92', list: [['0.95', 'Best'], ['0.92', 'High'], ['0.8', 'Smaller']] }
+    ],
+    async run(f, v) {
+      const mime = FMT[v.fmt][0]; let blob = null;
+      try { const bmp = await createImageBitmap(f); blob = await toBlob(drawn(bmp, bmp.width, bmp.height, v.fmt === 'jpg'), mime, +v.q); } catch { blob = null; }
+      if (!blob) {
+        await loadLib('heic2any', 'https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js', () => window.heic2any);
+        const r = await heic2any({ blob: f, toType: mime, quality: +v.q }); blob = Array.isArray(r) ? r[0] : r;
+      }
+      const data = await bytesOf(blob); return { name: stem(f.name) + '.' + v.fmt, type: mime, data, note: fmtBytes(data.length) };
+    }
+  },
+  bgremove: {
+    title: 'Remove Background', accept: 'image/*', go: 'Remove Background', image: true,
+    lede: 'Cuts out the main subject and makes the rest transparent. It works best on one clear subject, such as a person, product or pet. The first time it downloads a small model (about 5 MB). Your picture stays on your device.',
+    opts: [
+      { id: 'bg', label: 'Background', type: 'select', val: 'none', list: [['none', 'Transparent'], ['white', 'White'], ['color', 'Pick a colour']] },
+      { id: 'color', label: 'Colour', type: 'color', val: '#e8f1ff', when: 'bg=color' }
+    ],
+    run: (f, v, say) => { say('Getting the cutout tool ready…'); return removeBg(f, v); }
+  },
+  qr: {
+    title: 'QR Code Generator', qr: true,
+    lede: 'Make a QR code for a link, a Wi-Fi network, a WhatsApp chat or an email address. It is free to use, with no sign-up, and it never expires.',
+    opts: [
+      { id: 'type', label: 'What is it for?', type: 'select', val: 'url', list: [['url', 'A website link'], ['text', 'Plain text'], ['wifi', 'Wi-Fi network'], ['wa', 'WhatsApp chat'], ['email', 'Email address']] },
+      { id: 'text', label: 'Link or text', type: 'text', ph: 'ascsoftware.co.za', when: 'type=url|text|email' },
+      { id: 'ssid', label: 'Network name', type: 'text', when: 'type=wifi' },
+      { id: 'pass', label: 'Password', type: 'text', when: 'type=wifi' },
+      { id: 'sec', label: 'Security', type: 'select', val: 'WPA', list: [['WPA', 'WPA or WPA2'], ['WEP', 'WEP'], ['nopass', 'None']], when: 'type=wifi' },
+      { id: 'phone', label: 'WhatsApp number', type: 'text', ph: '082 123 4567', when: 'type=wa' },
+      { id: 'msg', label: 'First message (optional)', type: 'text', when: 'type=wa' },
+      { id: 'size', label: 'Size', type: 'select', val: '1024', list: [['512', 'Small (512 px)'], ['1024', 'Medium (1024 px)'], ['2048', 'Large (2048 px)']] },
+      { id: 'ec', label: 'Error correction', type: 'select', val: 'M', list: [['L', 'Low'], ['M', 'Medium'], ['Q', 'High'], ['H', 'Highest']] },
+      { id: 'fg', label: 'Code colour', type: 'color', val: '#000000' },
+      { id: 'bg', label: 'Background', type: 'color', val: '#ffffff' }
+    ]
+  },
+  vidcompress: {
+    title: 'Compress Video', accept: 'video/*,.mp4,.mov,.mkv,.webm,.avi,.m4v', go: 'Compress & Download', slow: true,
+    lede: 'Make a video smaller and save it as MP4. It runs on your device, so it can take a few minutes for a long clip. Keep this tab open while it works.',
+    opts: [
+      { id: 'crf', label: 'Quality', type: 'select', val: '28', list: [['24', 'High (larger file)'], ['28', 'Balanced'], ['32', 'Small'], ['35', 'Smallest']] },
+      { id: 'res', label: 'Height', type: 'select', val: '0', list: [['0', 'Keep original'], ['1080', '1080p'], ['720', '720p'], ['480', '480p']] }
+    ],
+    async run(f, v, say) {
+      const vf = +v.res ? `scale=-2:'min(${+v.res},ih)'` : 'scale=trunc(iw/2)*2:trunc(ih/2)*2', name = stem(f.name) + '-small.mp4';
+      const data = await ffRun(f, ['-vf', vf, '-c:v', 'libx264', '-preset', 'veryfast', '-crf', String(+v.crf), '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '128k', '-movflags', '+faststart'], name, say);
+      return { name, type: 'video/mp4', data, note: sizeNote(f.size, data.length) };
+    }
+  },
+  vid2mp3: {
+    title: 'Video to MP3', accept: 'video/*,audio/*,.mp4,.mov,.mkv,.webm,.avi,.m4v', go: 'Extract MP3', slow: true,
+    lede: 'Pull the sound out of a video and save it as an MP3. It runs on your device.',
+    opts: [{ id: 'br', label: 'Quality', type: 'select', val: '192', list: BITRATES }],
+    run: (f, v, say) => audioRun(f, { fmt: 'mp3', br: v.br }, say)
+  },
+  audioconv: {
+    title: 'Audio Converter', accept: 'audio/*,video/*,.mp3,.wav,.m4a,.aac,.ogg,.flac,.opus,.wma', go: 'Convert & Download', slow: true,
+    lede: 'Change an audio file to MP3, M4A, OGG or WAV. It runs on your device.',
+    opts: [
+      { id: 'fmt', label: 'Convert to', type: 'select', val: 'mp3', list: [['mp3', 'MP3'], ['m4a', 'M4A (AAC)'], ['ogg', 'OGG'], ['wav', 'WAV (large, lossless)']] },
+      { id: 'br', label: 'Quality', type: 'select', val: '192', list: BITRATES }
+    ],
+    run: (f, v, say) => audioRun(f, v, say)
+  }
+};
+
+function mtCollect() {
+  const v = {}; $('#mtOpts').querySelectorAll('[name]').forEach(el => { v[el.name] = el.type === 'checkbox' ? el.checked : el.value; }); return v;
+}
+function mtShow() {
+  const v = mtCollect();
+  $('#mtOpts').querySelectorAll('[data-when]').forEach(el => { const [k, vals] = el.dataset.when.split('='); el.hidden = !vals.split('|').includes(String(v[k])); });
+}
+function mtBuild() {
+  const T = MEDIA[mt.id];
+  $('#mtOpts').innerHTML = T.opts.map(o => {
+    const w = o.when ? ` data-when="${o.when}"` : '';
+    if (o.type === 'check') return `<label class="mtchk"${w}><input type="checkbox" name="${o.id}"${o.val ? ' checked' : ''}> ${esc(o.label)}</label>`;
+    const inner = o.type === 'select' ? `<select name="${o.id}">${o.list.map(([val, lab]) => `<option value="${val}"${val === o.val ? ' selected' : ''}>${esc(lab)}</option>`).join('')}</select>`
+      : `<input name="${o.id}" type="${o.type}"${o.val ? ` value="${o.val}"` : ''}${o.ph ? ` placeholder="${esc(o.ph)}"` : ''}${o.min ? ` min="${o.min}" max="${o.max}" inputmode="numeric"` : ''} autocomplete="off" spellcheck="false">`;
+    return `<label class="field"${w}>${esc(o.label)}${inner}</label>`;
+  }).join('');
+  mtShow();
+}
+function mtRender() {
+  $('#mtFiles').innerHTML = mt.files.map(f => `<li><span class="fn">${esc(f.name)}</span><span class="status">${fmtBytes(f.size)}</span></li>`).join('');
+  $('#mtGo').disabled = !mt.files.length || mt.busy;
+}
+function mtClearOut() { mt.urls.forEach(u => URL.revokeObjectURL(u)); mt.urls = []; $('#mtOut').innerHTML = ''; }
+function openMedia(id) {
+  const T = MEDIA[id]; mt.id = id; mt.files = []; mt.qr = null; mtClearOut();
+  $('#mtH').textContent = T.title; $('#mtLede').textContent = T.lede; $('#mtMsg').textContent = '';
+  $('#mtPick').hidden = !!T.qr; $('#mtFiles').hidden = !!T.qr; $('#mtGo').hidden = !!T.qr; $('#mtGo').textContent = T.go || 'Go';
+  mtBuild(); mtRender(); openModal($('#mtDlg'), T.qr ? $('#mtOpts').querySelector('input,select') : $('#mtPick'));
+  if (T.qr) qrRefresh();
+}
+$('#mtOpts').addEventListener('input', () => { mtShow(); if (mt.id === 'qr') qrRefresh(); });
+$('#mtOpts').addEventListener('change', () => { mtShow(); if (mt.id === 'qr') qrRefresh(); });
+$('#mtClose').onclick = () => { mtClearOut(); closeModal($('#mtDlg')); };
+$('#mtPick').onclick = () => { const T = MEDIA[mt.id]; $('#mtIn').accept = T.accept; $('#mtIn').click(); };
+$('#mtIn').onchange = e => { const fs = [...e.target.files]; e.target.value = ''; if (!fs.length) return; mt.files = fs; mtClearOut(); $('#mtMsg').textContent = ''; mtRender(); };
+$('#mtGo').onclick = async () => {
+  const T = MEDIA[mt.id], msg = $('#mtMsg'), n = mt.files.length; if (!n || mt.busy) return;
+  if (n > FREE.batch && !gate('batch')) return;
+  if (!pro.active && mt.files.some(f => f.size > FREE.bytes)) { gate('bigfile'); return; }
+  const v = mtCollect(), out = []; mt.busy = true; mtClearOut(); mtRender();
+  try {
+    for (let i = 0; i < n; i++) {
+      const say = t => { msg.textContent = (n > 1 ? `File ${i + 1} of ${n}: ` : '') + t; }; say('Working…');
+      out.push(await T.run(mt.files[i], v, say));
+    }
+    const list = document.createElement('ul');
+    out.forEach(o => { const li = document.createElement('li'); if (T.image) { const u = URL.createObjectURL(new Blob([o.data], { type: o.type })); mt.urls.push(u); const im = document.createElement('img'); im.src = u; im.alt = ''; li.append(im); } li.append(Object.assign(document.createElement('span'), { textContent: o.name + (o.note ? ' · ' + o.note : '') })); list.append(li); });
+    $('#mtOut').append(list);
+    if (out.length === 1) { await saveBlob(new Blob([out[0].data], { type: out[0].type }), out[0].name); msg.textContent = `Saved ${out[0].name}.`; }
+    else { await saveBlob(makeZip(out), 'converted.zip'); msg.textContent = `Saved ${out.length} files in converted.zip.`; }
+  } catch (err) {
+    console.error(err);
+    msg.textContent = err.message === 'size' ? 'Enter a width or a height first.' : err.message === 'image' ? 'That picture couldn’t be read. It may be damaged or in a format this browser can’t open.' : err.message === 'lib' ? 'Couldn’t load the helper this tool needs. Check your connection and try again.' : T.slow ? 'That file couldn’t be converted. It may be damaged or in a format this tool can’t read. Very large files can also run out of memory.' : 'That didn’t work. Please try another file.';
+  } finally { mt.busy = false; mtRender(); }
+};
+
 /* ---------- tool hub ---------- */
 const ICONS = {
   merge: '<rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/><path d="M11 7h4a2 2 0 0 1 2 2v4"/>',
@@ -1807,7 +2168,12 @@ const ICONS = {
   word: '<path d="M6 3h8l4 4v14H6z"/><path d="M14 3v4h4M9 12h6M9 16h6"/>',
   excel: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M3 15h18M9 4v16"/>',
   ppt: '<rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M12 16v4M8 20h8"/>',
-  ocr: '<path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3M4 12h16"/>'
+  ocr: '<path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3M4 12h16"/>',
+  resize: '<path d="M4 9V4h5M20 15v5h-5M4 4l6 6M20 20l-6-6"/>',
+  wand: '<path d="m5 19 9-9M14 4l.8 1.7 1.7.8-1.7.8L14 9l-.8-1.7-1.7-.8 1.7-.8zM19 11l.6 1.2 1.2.6-1.2.6L19 15l-.6-1.2-1.2-.6 1.2-.6z"/>',
+  qr: '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM20 14v.01M14 20h3M20 17v4"/>',
+  video: '<rect x="3" y="6" width="13" height="12" rx="2"/><path d="m16 10 5-3v10l-5-3z"/>',
+  audio: '<path d="M9 18V6l10-2v12"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="16.5" cy="16" r="2.5"/>'
 };
 const TOOLS = [
   { g: 'Organize', id: 'merge', icon: 'merge', name: 'Merge PDF', desc: 'Combine files into one' },
@@ -1827,7 +2193,15 @@ const TOOLS = [
   { g: 'Convert', id: 'pdf2excel', icon: 'excel', name: 'PDF to Excel', desc: 'Tables to .xlsx', pro: 'office' },
   { g: 'Convert', id: 'pdf2ppt', icon: 'ppt', name: 'PDF to PowerPoint', desc: 'Slides as .pptx', pro: 'office' },
   { g: 'Convert', id: 'word2pdf', icon: 'word', name: 'Office to PDF', desc: 'Word, Excel, PowerPoint', pro: 'office' },
-  { g: 'Convert', id: 'ocr', icon: 'ocr', name: 'OCR Scanned PDF', desc: 'Make scans searchable', pro: 'ocr' }
+  { g: 'Convert', id: 'ocr', icon: 'ocr', name: 'OCR Scanned PDF', desc: 'Make scans searchable', pro: 'ocr' },
+  { g: 'Images', id: 'imgcompress', icon: 'compress', name: 'Compress Image', desc: 'Make photos smaller' },
+  { g: 'Images', id: 'imgresize', icon: 'resize', name: 'Resize Image', desc: 'Set a new size' },
+  { g: 'Images', id: 'heic2jpg', icon: 'image', name: 'HEIC to JPG', desc: 'iPhone photos to JPG' },
+  { g: 'Images', id: 'bgremove', icon: 'wand', name: 'Remove Background', desc: 'Cut out the subject' },
+  { g: 'Create', id: 'qr', icon: 'qr', name: 'QR Code Generator', desc: 'Links, Wi-Fi, WhatsApp' },
+  { g: 'Audio & Video', id: 'vidcompress', icon: 'video', name: 'Compress Video', desc: 'Smaller MP4 files' },
+  { g: 'Audio & Video', id: 'vid2mp3', icon: 'audio', name: 'Video to MP3', desc: 'Pull out the sound' },
+  { g: 'Audio & Video', id: 'audioconv', icon: 'audio', name: 'Audio Converter', desc: 'MP3, M4A, OGG, WAV' }
 ];
 function buildTiles() {
   const groups = [...new Set(TOOLS.map(t => t.g))];
@@ -1855,6 +2229,7 @@ function runIntent(id) {
 function startTool(id) {
   const t = TOOLS.find(x => x.id === id);
   if (t && t.soon) { toast('This tool is coming soon.'); return; }
+  if (MEDIA[id]) { openMedia(id); return; }
   if (CONVERT[id]) { openConvert(id); return; }
   if (t.pro && !gate(t.pro)) return;
   st.intent = id;
