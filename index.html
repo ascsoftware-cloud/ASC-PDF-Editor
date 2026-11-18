@@ -446,6 +446,15 @@ a.btn{text-decoration:none}
       <button type="button" class="btn" id="proClose">Not Now</button>
       <button type="button" class="btn primary" id="proBuy">Get Pro</button>
     </div>
+    <form id="buyForm" class="early" hidden novalidate>
+      <p style="margin:0;font-weight:700">Where should we send your licence key?</p>
+      <div class="stack">
+        <label class="field">Email<input type="email" id="buyEmail" name="email" autocomplete="email" spellcheck="false" placeholder="you@example.com"></label>
+      </div>
+      <div class="row"><button type="submit" class="btn primary" id="buySend">Continue to PayFast</button></div>
+      <p id="buyMsg" class="msg" role="status"></p>
+      <p class="msg">You pay on PayFast’s own secure page. We never see your card details. <button type="button" class="linkbtn" id="buyRestore">Already subscribed? Email my key</button></p>
+    </form>
     <form id="earlyForm" class="early" hidden novalidate>
       <p style="margin:0;font-weight:700">Request early access</p>
       <div class="stack">
@@ -557,10 +566,11 @@ const { PDFDocument, StandardFonts, degrees, rgb } = PDFLib;
 /* ---------- settings (edit these) ---------- */
 const CONFIG = {
   contactEmail: 'hello@ascsoftware.co.za', // shown for early-access requests; change to your shared address
-  checkoutUrl: '',       // payment page for Pro (PayFast, Paystack, Stripe…). Empty = early-access email instead
-  licenseEndpoint: '',   // POST {key} -> {valid:true, expires:'2027-01-01T00:00:00Z'}. Empty = keys cannot be checked yet
+  apiBase: 'https://ledgerly.ascsoftware.co.za/api/pdf', // payments and licences (PayFast), run by ASC. Empty = early-access email instead
+  checkoutUrl: '',       // optional: a payment page to open instead of the built-in PayFast checkout
+  licenseEndpoint: 'https://ledgerly.ascsoftware.co.za/api/pdf/licence', // POST {key} -> {valid:true, expires:'2027-01-01T00:00:00Z'}. Empty = keys cannot be checked yet
   convertEndpoint: '',   // POST multipart {file, target, key} -> converted file bytes. Needs a server (Office, OCR)
-  price: '',             // e.g. 'R99 per month'. Empty hides the price line
+  price: 'R79 per month. Cancel any time.', // shown in the Pro window. Empty hides the price line
   supabaseUrl: 'https://npoltdukdxrjqdqyiqmb.supabase.co', // accounts, saved files and early-access requests
   supabaseKey: 'sb_publishable_nlqR8OvqJzrpbYTJYsIwHQ_GYI284Og', // publishable key: safe in the page, protected by row level security
   devExpose: false       // leave false in production
@@ -569,7 +579,8 @@ const FREE = { pages: 100, bytes: 25 * 1024 * 1024, batch: 5 };
 const pro = { active: false, key: '' };
 // NOTE: this flag lives in the browser, so it only gates the on-device tools. The server features
 // (Office conversion, OCR) must verify the key on your server before doing any work.
-try { const l = JSON.parse(localStorage.getItem('asc_pdf_licence') || 'null'); if (l && l.key && l.exp && Date.parse(l.exp) > Date.now()) { pro.active = true; pro.key = l.key; } } catch {}
+let storedKey = '';
+try { const l = JSON.parse(localStorage.getItem('asc_pdf_licence') || 'null'); if (l && l.key) { storedKey = l.key; if (l.exp && Date.parse(l.exp) > Date.now()) { pro.active = true; pro.key = l.key; } } } catch {}
 
 
 const A4 = [595.28, 841.89];
@@ -1152,12 +1163,14 @@ function gate(feature) { if (pro.active) return true; openPro(feature); return f
 function openPro(feature) {
   $('#proWhy').textContent = WHY[feature] ? `Pro feature: ${WHY[feature]}.` : 'Pro unlocks the extra tools below.';
   $('#proPrice').textContent = CONFIG.price; $('#proPrice').hidden = !CONFIG.price;
-  const buy = $('#proBuy'); buy.textContent = CONFIG.checkoutUrl ? 'Get Pro' : 'Request Early Access'; proFeature = feature || '';
+  const buy = $('#proBuy'); buy.textContent = (CONFIG.apiBase || CONFIG.checkoutUrl) ? 'Get Pro' : 'Request Early Access'; proFeature = feature || '';
+  $('#buyForm').hidden = true; $('#buyMsg').textContent = ''; $('#buySend').disabled = false;
   $('#earlyForm').hidden = true; $('#earlyMsg').textContent = ''; $('#earlySend').disabled = false; $('#earlyAddr').textContent = CONFIG.contactEmail;
   $('#keyMsg').textContent = ''; openModal($('#proDlg'), buy);
 }
 let proFeature = '';
 $('#proBuy').onclick = () => {
+  if (CONFIG.apiBase) { const f = $('#buyForm'), em = $('#buyEmail'); f.hidden = false; if (!em.value && acct.user) em.value = acct.user.email; f.scrollIntoView({ block: 'nearest' }); em.focus(); return; }
   if (CONFIG.checkoutUrl) { window.open(CONFIG.checkoutUrl, '_blank', 'noopener'); return; }
   const f = $('#earlyForm'), em = $('#earlyEmail'); f.hidden = false; if (!em.value && acct.user) em.value = acct.user.email;
   f.scrollIntoView({ block: 'nearest' }); em.focus();
@@ -1175,6 +1188,65 @@ $('#earlyForm').addEventListener('submit', async e => {
     msg.textContent = 'Thanks! We’ve got your request and will email you when Pro opens.'; $('#earlyNote').value = '';
   } catch (err) { console.error(err); $('#earlySend').disabled = false; msg.textContent = `That didn’t send. Please try again, or email ${CONFIG.contactEmail}.`; }
 });
+/* ---------- PayFast checkout, return and licence checks ---------- */
+const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+async function api(path, body) {
+  const r = await fetch(CONFIG.apiBase + path, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
+  let j = null; try { j = await r.json(); } catch {}
+  return { ok: r.ok, j: j || {} };
+}
+function saveLicence(key, exp) { try { localStorage.setItem('asc_pdf_licence', JSON.stringify({ key, exp: exp || new Date(Date.now() + 30 * 864e5).toISOString() })); } catch {} }
+function activateLicence(key, exp) { pro.active = true; pro.key = key; storedKey = key; saveLicence(key, exp); syncPro(); }
+$('#buyForm').addEventListener('submit', async e => {
+  e.preventDefault(); const msg = $('#buyMsg'), em = $('#buyEmail'), email = em.value.trim();
+  if (!EMAIL_RE.test(email)) { msg.textContent = 'Enter a valid email address.'; em.focus(); return; }
+  $('#buySend').disabled = true; msg.textContent = 'Opening PayFast…';
+  try {
+    const { ok, j } = await api('/checkout', { email });
+    if (!ok || !j.action || !Array.isArray(j.fields)) { $('#buySend').disabled = false; msg.textContent = j.message || 'Couldn’t start the payment. Please try again.'; return; }
+    const f = document.createElement('form'); f.method = 'POST'; f.action = j.action;
+    for (const [name, value] of j.fields) { const i = document.createElement('input'); i.type = 'hidden'; i.name = name; i.value = value; f.appendChild(i); }
+    document.body.appendChild(f); f.submit();
+  } catch { $('#buySend').disabled = false; msg.textContent = 'Couldn’t reach the payment server. Please try again in a moment.'; }
+});
+$('#buyRestore').onclick = async () => {
+  const msg = $('#buyMsg'), em = $('#buyEmail'), email = em.value.trim();
+  if (!EMAIL_RE.test(email)) { msg.textContent = 'Enter the email you subscribed with, then press this again.'; em.focus(); return; }
+  msg.textContent = 'Sending…';
+  try { const { ok, j } = await api('/restore', { email }); msg.textContent = ok ? 'If that address has a licence, we’ve emailed the key to it. Check your inbox.' : (j.message || 'That didn’t send. Please try again.'); }
+  catch { msg.textContent = 'Couldn’t reach the server. Please try again in a moment.'; }
+};
+// After PayFast sends the buyer back: wait for PayFast to confirm the payment, then switch Pro on.
+async function handlePaymentReturn() {
+  const q = new URLSearchParams(location.search), state = q.get('pro'), id = q.get('c');
+  if (!state) return;
+  history.replaceState(null, '', location.pathname + location.hash);
+  if (state === 'cancelled') { toast('Payment cancelled. You haven’t been charged.'); return; }
+  if (state !== 'return' || !id || !CONFIG.apiBase) return;
+  toast('Confirming your payment…');
+  for (let i = 0; i < 45; i++) {
+    try {
+      const r = await fetch(CONFIG.apiBase + '/licence?checkout=' + encodeURIComponent(id)), j = await r.json();
+      if (j && j.ready && j.key) {
+        activateLicence(j.key, j.expires);
+        openPro(); $('#buyForm').hidden = true; $('#keyIn').value = j.key;
+        $('#keyMsg').textContent = 'Pro is active. Thank you! Your licence key is above, and we’ve emailed it to you. Keep it safe.';
+        return;
+      }
+    } catch {}
+    await new Promise(res => setTimeout(res, 2000));
+  }
+  toast('Your payment is still being confirmed. Your licence key will be emailed to you shortly.');
+}
+// A stored key is re-checked on each visit, so a renewal extends it and a cancelled or unpaid one stops.
+async function refreshLicence() {
+  if (!CONFIG.licenseEndpoint || !storedKey) return;
+  try {
+    const r = await fetch(CONFIG.licenseEndpoint, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ key: storedKey }) }), j = await r.json();
+    if (j && j.valid) { activateLicence(storedKey, j.expires); }
+    else if (r.status !== 429 && j && j.valid === false) { pro.active = false; pro.key = ''; try { localStorage.removeItem('asc_pdf_licence'); } catch {} storedKey = ''; syncPro(); }
+  } catch { /* offline or server busy: keep what we have */ }
+}
 function syncPro() { document.body.classList.toggle('is-pro', pro.active); $('#proBadge').hidden = !pro.active; $('#goPro').hidden = pro.active; }
 $('#goPro').onclick = () => openPro(); $('#proClose').onclick = () => closeModal($('#proDlg'));
 $('#keyForm').addEventListener('submit', async e => {
@@ -1184,9 +1256,8 @@ $('#keyForm').addEventListener('submit', async e => {
   try {
     const r = await fetch(CONFIG.licenseEndpoint, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ key }) }), j = await r.json();
     if (j && j.valid) {
-      pro.active = true; pro.key = key;
-      try { localStorage.setItem('asc_pdf_licence', JSON.stringify({ key, exp: j.expires || new Date(Date.now() + 30 * 864e5).toISOString() })); } catch {}
-      syncPro(); msg.textContent = 'Pro is active. Thank you!'; setTimeout(() => closeModal($('#proDlg')), 900);
+      activateLicence(key.toUpperCase(), j.expires);
+      msg.textContent = 'Pro is active. Thank you!'; setTimeout(() => closeModal($('#proDlg')), 900);
     } else msg.textContent = 'That key wasn’t recognised. Check it and try again.';
   } catch { msg.textContent = 'Couldn’t reach the licence server. Try again in a moment.'; }
 });
@@ -1592,7 +1663,7 @@ async function doSave(files) {
 }
 syncAcct();
 
-buildTiles(); syncPro();
+buildTiles(); syncPro(); refreshLicence(); handlePaymentReturn();
 if (CONFIG.devExpose) window.__asc = { setPro: v => { pro.active = v; pro.key = 'dev'; syncPro(); }, sb };
 
 $('#outName').value = 'document.pdf';
