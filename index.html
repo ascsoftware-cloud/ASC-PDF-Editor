@@ -489,6 +489,16 @@ a.btn{text-decoration:none}
   </div>
 </div>
 
+<!-- Which account? (arriving from Ledgerly while another account is open here) -->
+<div id="ssoDlg" class="modal" role="dialog" aria-modal="true" aria-labelledby="ssoH" hidden>
+  <div class="panel">
+    <h2 id="ssoH">Which account do you want to use?</h2>
+    <p id="ssoLede" class="lede" style="margin:0 0 8px"></p>
+    <div class="row"><button type="button" class="btn" id="ssoKeep"></button><button type="button" class="btn primary" id="ssoSwitch"></button></div>
+    <p id="ssoMsg" class="msg" role="status"></p>
+  </div>
+</div>
+
 <!-- My files dialog -->
 <div id="filesDlg" class="modal" role="dialog" aria-modal="true" aria-labelledby="filesH" hidden>
   <div class="panel wide">
@@ -500,6 +510,7 @@ a.btn{text-decoration:none}
     <p id="filesEmpty" class="msg" hidden>No saved files yet. Files you add while signed in will appear here.</p>
     <p id="filesMsg" class="msg" role="status"></p>
     <div class="row">
+      <button type="button" class="btn" id="filesLedgerly">Open Ledgerly</button>
       <button type="button" class="btn" id="filesOut">Sign Out</button>
       <button type="button" class="btn" id="filesClose">Close</button>
       <button type="button" class="btn primary" id="filesAdd" disabled>Add Selected</button>
@@ -566,6 +577,8 @@ const CONFIG = {
   checkoutUrl: '',       // optional: a payment page to open instead of the built-in PayFast checkout
   licenseEndpoint: 'https://ledgerly.ascsoftware.co.za/api/pdf/licence', // POST {key} -> {valid:true, expires:'2027-01-01T00:00:00Z'}. Empty = keys cannot be checked yet
   convertEndpoint: '',   // POST multipart {file, target, key} -> converted file bytes. Needs a server (Office, OCR)
+  ledgerlyOrigin: 'https://ledgerly.ascsoftware.co.za', // the ASC account lives here; used to move between the two without signing in again
+  ssoBase: 'https://ledgerly.ascsoftware.co.za/api/sso',
   price: 'R44,99 per month. Cancel any time.', // shown in the Pro window. Empty hides the price line
   supabaseUrl: 'https://znufbvcjqdrpcyqiofrz.supabase.co', // the ASC account (the same one as Ledgerly) and saved files
   supabaseKey: 'sb_publishable_TGDcdypQQ-7OKH3GnYpZcA_EHtRCm8M', // publishable key: safe in the page, protected by row level security
@@ -1597,6 +1610,48 @@ if (sb) {
 }
 $('#acctBtn').onclick = () => acct.user ? openFiles() : openAcct();
 
+/* ---------- moving between Ledgerly and this editor ---------- */
+// Arriving from Ledgerly with a one-time token after the #: sign in here as the same account, or ask which account to use.
+// The token is only believed when the visitor really came from Ledgerly, so a link on some other site cannot sign anyone in.
+async function handleSsoArrival() {
+  const h = new URLSearchParams(location.hash.replace(/^#/, '')), token = h.get('asc');
+  if (!token) return;
+  history.replaceState(null, '', location.pathname + location.search);
+  let fromLedgerly = false; try { fromLedgerly = new URL(document.referrer).origin === CONFIG.ledgerlyOrigin; } catch {}
+  if (!sb || !fromLedgerly || !/^[A-Za-z0-9_-]{10,200}$/.test(token)) return;
+  const other = (h.get('e') || '').toLowerCase().slice(0, 254);
+  const { data } = await sb.auth.getSession(), cur = ((data && data.session && data.session.user && data.session.user.email) || '').toLowerCase();
+  const signIn = async () => { const { error } = await sb.auth.verifyOtp({ token_hash: token, type: 'magiclink' }); if (error) throw error; };
+  if (!cur) {
+    try { await signIn(); toast(other ? `Signed in as ${other}.` : 'Signed in.'); }
+    catch (err) { console.error(err); toast('Couldn’t sign you in automatically. Use Sign in with your email.'); }
+    return;
+  }
+  if (!other || cur === other) return;
+  $('#ssoLede').textContent = `You’re signed in here as ${cur}, and you came from Ledgerly as ${other}.`;
+  $('#ssoKeep').textContent = `Continue as ${cur}`; $('#ssoSwitch').textContent = `Switch to ${other}`; $('#ssoMsg').textContent = '';
+  $('#ssoKeep').onclick = () => closeModal($('#ssoDlg'));
+  $('#ssoSwitch').onclick = async () => {
+    $('#ssoSwitch').disabled = true; $('#ssoMsg').textContent = 'Switching…';
+    try { await signIn(); closeModal($('#ssoDlg')); toast(`Signed in as ${other}.`); }
+    catch (err) { console.error(err); $('#ssoMsg').textContent = 'Couldn’t switch. Your link may have expired: open the editor from Ledgerly again.'; }
+    finally { $('#ssoSwitch').disabled = false; }
+  };
+  openModal($('#ssoDlg'), $('#ssoKeep'));
+}
+// "Open Ledgerly": ask Ledgerly for a one-time link for this same account, in a new tab so unsaved work here is not lost.
+$('#filesLedgerly').onclick = async () => {
+  const btn = $('#filesLedgerly'), msg = $('#filesMsg'), w = window.open('', '_blank'); btn.disabled = true; msg.textContent = 'Opening Ledgerly…';
+  try {
+    const { data } = await sb.auth.getSession(), jwt = data && data.session && data.session.access_token; if (!jwt) throw new Error('no session');
+    const r = await fetch(CONFIG.ssoBase + '/handoff', { method: 'POST', headers: { 'content-type': 'application/json', authorization: 'Bearer ' + jwt }, body: '{}' }), j = await r.json();
+    if (!r.ok || !j.url) throw new Error(j.message || 'failed');
+    if (w) w.location.href = j.url; else location.href = j.url;
+    msg.textContent = '';
+  } catch (err) { console.error(err); if (w) w.close(); msg.textContent = 'Couldn’t open Ledgerly from here. Go to ledgerly.ascsoftware.co.za and sign in with the same email.'; }
+  finally { btn.disabled = false; }
+};
+
 async function loadFiles() {
   const { data, error } = await sb.from('pdf_user_files').select('id,name,size,mime,path,created_at').order('created_at', { ascending: false });
   if (error) throw error; acct.files = data || []; acct.fresh = true; return acct.files;
@@ -1662,7 +1717,7 @@ async function doSave(files) {
 }
 syncAcct();
 
-buildTiles(); syncPro(); refreshLicence(); handlePaymentReturn();
+buildTiles(); syncPro(); refreshLicence(); handlePaymentReturn(); handleSsoArrival();
 if (CONFIG.devExpose) window.__asc = { setPro: v => { pro.active = v; pro.key = 'dev'; syncPro(); }, sb };
 
 $('#outName').value = 'document.pdf';
