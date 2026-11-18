@@ -293,7 +293,7 @@ a.btn{text-decoration:none}
 <noscript><p style="margin:0;padding:10px 16px;background:#fff3cd;color:#4a3b00;text-align:center">This PDF editor needs JavaScript. Turn it on in your browser to edit, merge, split, sign and convert PDFs.</p></noscript>
 <header class="top">
   <div class="brand"><svg class="mark" viewBox="0 0 64 64" role="img" aria-label="ASC Software logo"><use href="#asc-badge"/></svg><span><span translate="no">ASC Software</span><small>PDF Tools</small></span></div>
-  <div class="hdr-actions"><span class="privacy">Core tools run on your device</span><span id="proBadge" class="pill" hidden>Pro</span><button type="button" class="sw" id="themeSw" role="switch" aria-checked="false" aria-label="Light mode"><span class="i l"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg></span><span class="i r"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></span><span class="k"><span class="kd"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg></span><span class="kl"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></span></span></button><button type="button" class="btn" id="ledgerlyBtn">Ledgerly</button><button type="button" class="btn" id="goPro">Get Pro</button><button type="button" class="btn" id="acctBtn" hidden>Sign in</button></div>
+  <div class="hdr-actions"><span class="privacy">Core tools run on your device</span><span id="proBadge" class="pill" hidden>Pro</span><button type="button" class="sw" id="themeSw" role="switch" aria-checked="false" aria-label="Light mode"><span class="i l"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg></span><span class="i r"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></span><span class="k"><span class="kd"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg></span><span class="kl"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></span></span></button><button type="button" class="btn" id="ledgerlyBtn">Ledgerly</button><button type="button" class="btn primary" id="goPro">Get Pro</button><button type="button" class="btn" id="acctBtn" hidden>Sign in</button></div>
 </header>
 
 <main id="main">
@@ -1618,10 +1618,19 @@ $('#acctResend').onclick = async () => {
 if (sb) {
   sb.auth.onAuthStateChange((ev, session) => {
     const prev = acct.user && acct.user.id; acct.user = session ? session.user : null; if ((acct.user && acct.user.id) !== prev) { acct.files = []; acct.fresh = false; }
-    syncAcct();
+    syncAcct(); if (session) accountPro(session.access_token); else dropAccountPro();
   });
 }
 $('#acctBtn').onclick = () => acct.user ? openFiles() : openAcct();
+// ASC's own people have Pro just by being signed in: Ledgerly confirms who they are, and nothing is kept in the browser.
+async function accountPro(jwt) {
+  if (!CONFIG.apiBase || pro.active) return;
+  try {
+    const r = await fetch(CONFIG.apiBase + '/account', { method: 'POST', headers: { authorization: 'Bearer ' + jwt } }), j = await r.json();
+    if (j && j.pro) { pro.active = true; pro.key = 'account'; syncPro(); } else dropAccountPro();
+  } catch { /* offline or busy: leave things as they are */ }
+}
+function dropAccountPro() { if (pro.key === 'account') { pro.active = false; pro.key = ''; syncPro(); } }
 
 /* ---------- moving between Ledgerly and this editor ---------- */
 // Arriving from Ledgerly with a one-time token after the #: sign in here as the same account, or ask which account to use.
