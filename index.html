@@ -496,6 +496,7 @@ a.btn{text-decoration:none}
       <p class="fine" id="proDealFine"></p>
     </div>
     <p id="proPrice" style="font-weight:700;margin:0 0 14px" hidden></p>
+    <p id="proHint" class="msg" style="margin:-6px 0 14px" hidden>Pay for Ledgerly Pro or Max? Then PDF Pro is R29,99 a month for your first 6 months. Add it when you upgrade Ledgerly.</p>
     <div class="row">
       <button type="button" class="btn" id="proClose">Not Now</button>
       <button type="button" class="btn primary" id="proBuy">Get Pro</button>
@@ -1273,10 +1274,11 @@ let pdfOffer = null;
 async function sessionJwt() { const { data } = sb ? await sb.auth.getSession() : { data: null }; return (data && data.session && data.session.access_token) || ''; }
 const randText = c => 'R' + (c % 100 ? (c / 100).toFixed(2).replace('.', ',') : String(c / 100));
 async function loadPdfOffer() {
-  pdfOffer = null; $('#proDeal').hidden = true; if (!CONFIG.apiBase || !acct.user) return;
+  pdfOffer = null; $('#proDeal').hidden = true; $('#proHint').hidden = true; if (!CONFIG.apiBase || !acct.user) return;
   try {
     const jwt = await sessionJwt(); if (!jwt) return;
     const r = await fetch(CONFIG.apiBase + '/offer', { method: 'POST', headers: { authorization: 'Bearer ' + jwt } }), j = await r.json();
+    if (j && j.eligible === false && !$('#proDlg').hidden) $('#proHint').hidden = false;
     if (!j || !j.eligible || !j.chargeCents || !j.discountCents || $('#proDlg').hidden) return;
     pdfOffer = j; const saved = randText(j.discountCents * j.months);
     $('#proDealHead').textContent = `Save ${saved} on ASC PDF Pro`; $('#proDealWas').textContent = randText(j.priceCents); $('#proDealNow').textContent = randText(j.chargeCents);
