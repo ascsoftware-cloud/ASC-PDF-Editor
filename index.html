@@ -184,6 +184,13 @@ footer a{color:inherit}
 .plist{margin:10px 0 14px;padding:0;list-style:none;display:grid;gap:8px}
 .plist li{display:flex;gap:10px;align-items:flex-start}
 .plist li::before{content:"✓";color:var(--accent-fg);font-weight:800}
+#proDlg .panel{padding:26px}
+#proDlg .plist{margin:18px 0 22px;gap:14px}
+#proDlg .plist li{line-height:1.5}
+#proDlg .row{margin-top:6px}
+#proDlg .msg{margin-top:14px}
+#proDlg .msg:empty{display:none}
+#proDlg .keyrow{margin-top:22px;padding-top:18px}
 .keyrow{display:flex;gap:8px;align-items:end;margin-top:14px;flex-wrap:wrap;border-top:1px solid var(--line);padding-top:14px}
 .keyrow .field{flex:1 1 200px}
 .keyrow input{width:100%}
@@ -267,7 +274,7 @@ a.btn{text-decoration:none}
 [data-theme=light] .sw .kd{display:none}[data-theme=light] .sw .kl{display:grid}
 [data-theme=light] .sw .i.r,[data-theme=dark] .sw .i.l,:root:not([data-theme]) .sw .i.l{display:none}
 /* trust row and steps */
-.trust{display:flex;flex-wrap:wrap;justify-content:center;gap:8px 28px;margin:22px 0 0;padding:0;list-style:none;color:var(--muted);font-size:14px}
+.trust{display:flex;flex-wrap:wrap;justify-content:center;gap:10px 28px;margin:26px 0 32px;padding:0;list-style:none;color:var(--muted);font-size:14px}
 .trust li{display:flex;align-items:center;gap:8px}
 .trust svg{width:16px;height:16px;fill:none;stroke:var(--accent-fg);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;list-style:none;margin:16px 0 0;padding:0}
@@ -286,7 +293,7 @@ a.btn{text-decoration:none}
 <noscript><p style="margin:0;padding:10px 16px;background:#fff3cd;color:#4a3b00;text-align:center">This PDF editor needs JavaScript. Turn it on in your browser to edit, merge, split, sign and convert PDFs.</p></noscript>
 <header class="top">
   <div class="brand"><svg class="mark" viewBox="0 0 64 64" role="img" aria-label="ASC Software logo"><use href="#asc-badge"/></svg><span><span translate="no">ASC Software</span><small>PDF Tools</small></span></div>
-  <div class="hdr-actions"><span class="privacy">Core tools run on your device</span><span id="proBadge" class="pill" hidden>Pro</span><button type="button" class="sw" id="themeSw" role="switch" aria-checked="false" aria-label="Light mode"><span class="i l"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg></span><span class="i r"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></span><span class="k"><span class="kd"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg></span><span class="kl"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></span></span></button><button type="button" class="btn" id="goPro">Get Pro</button><button type="button" class="btn" id="acctBtn" hidden>Sign in</button></div>
+  <div class="hdr-actions"><span class="privacy">Core tools run on your device</span><span id="proBadge" class="pill" hidden>Pro</span><button type="button" class="sw" id="themeSw" role="switch" aria-checked="false" aria-label="Light mode"><span class="i l"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg></span><span class="i r"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></span><span class="k"><span class="kd"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg></span><span class="kl"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></span></span></button><button type="button" class="btn" id="ledgerlyBtn">Ledgerly</button><button type="button" class="btn" id="goPro">Get Pro</button><button type="button" class="btn" id="acctBtn" hidden>Sign in</button></div>
 </header>
 
 <main id="main">
@@ -433,7 +440,7 @@ a.btn{text-decoration:none}
 <div id="proDlg" class="modal" role="dialog" aria-modal="true" aria-labelledby="proH" hidden>
   <div class="panel wide">
     <h2 id="proH">ASC PDF Pro</h2>
-    <p id="proWhy" class="lede" style="margin:0 0 6px"></p>
+    <p id="proWhy" class="lede" style="margin:0 0 4px"></p>
     <ul class="plist">
       <li>Documents over 100 pages and files over 25&nbsp;MB</li>
       <li>Convert PDF to Excel and PowerPoint, and Word, Excel or PowerPoint files to PDF</li>
@@ -441,11 +448,12 @@ a.btn{text-decoration:none}
       <li>Batch work: split into many files and convert several files at once</li>
       <li>Strong compression, page numbers and watermarks</li>
     </ul>
-    <p id="proPrice" style="font-weight:700;margin:0 0 10px" hidden></p>
+    <p id="proPrice" style="font-weight:700;margin:0 0 22px" hidden></p>
     <div class="row">
       <button type="button" class="btn" id="proClose">Not Now</button>
       <button type="button" class="btn primary" id="proBuy">Get Pro</button>
     </div>
+    <p id="proBuyMsg" class="msg" role="status"></p>
     <form id="buyForm" class="early" hidden novalidate>
       <p style="margin:0;font-weight:700">Your email, for your licence key and receipt</p>
       <div class="stack">
@@ -1173,16 +1181,17 @@ function openPro(feature) {
   $('#proWhy').textContent = WHY[feature] ? `Pro feature: ${WHY[feature]}.` : 'Pro unlocks the extra tools below.';
   $('#proPrice').textContent = CONFIG.price; $('#proPrice').hidden = !CONFIG.price;
   const buy = $('#proBuy'); buy.textContent = CONFIG.apiBase ? 'Subscribe now' : CONFIG.checkoutUrl ? 'Get Pro' : 'Request Early Access'; proFeature = feature || '';
-  $('#buyForm').hidden = true; $('#buyMsg').textContent = ''; $('#buySend').disabled = false;
+  $('#buyForm').hidden = true; $('#buyMsg').textContent = ''; $('#buySend').disabled = false; $('#proBuyMsg').textContent = ''; buy.disabled = false;
   $('#earlyForm').hidden = true; $('#earlyMsg').textContent = ''; $('#earlySend').disabled = false; $('#earlyAddr').textContent = CONFIG.contactEmail;
   $('#keyMsg').textContent = ''; openModal($('#proDlg'), buy);
 }
 let proFeature = '';
 $('#proBuy').onclick = () => {
   if (CONFIG.apiBase) {
-    const f = $('#buyForm'), em = $('#buyEmail'); if (!em.value && acct.user) em.value = acct.user.email;
-    if (acct.user && EMAIL_RE.test(em.value.trim())) { f.hidden = false; $('#buyForm').requestSubmit(); return; }
-    f.hidden = false; f.scrollIntoView({ block: 'nearest' }); em.focus(); return;
+    // Signed in: we already know the email, so go straight to PayFast. Only visitors who are not signed in are asked for one.
+    const known = ((acct.user && acct.user.email) || '').trim();
+    if (EMAIL_RE.test(known)) { const b = $('#proBuy'); b.disabled = true; startPayfast(known, t => { $('#proBuyMsg').textContent = t; }, () => { b.disabled = false; }); return; }
+    const f = $('#buyForm'), em = $('#buyEmail'); f.hidden = false; f.scrollIntoView({ block: 'nearest' }); em.focus(); return;
   }
   if (CONFIG.checkoutUrl) { window.open(CONFIG.checkoutUrl, '_blank', 'noopener'); return; }
   const f = $('#earlyForm'), em = $('#earlyEmail'); f.hidden = false; if (!em.value && acct.user) em.value = acct.user.email;
@@ -1210,17 +1219,21 @@ async function api(path, body) {
 }
 function saveLicence(key, exp) { try { localStorage.setItem('asc_pdf_licence', JSON.stringify({ key, exp: exp || new Date(Date.now() + 30 * 864e5).toISOString() })); } catch {} }
 function activateLicence(key, exp) { pro.active = true; pro.key = key; storedKey = key; saveLicence(key, exp); syncPro(); }
-$('#buyForm').addEventListener('submit', async e => {
-  e.preventDefault(); const msg = $('#buyMsg'), em = $('#buyEmail'), email = em.value.trim();
-  if (!EMAIL_RE.test(email)) { msg.textContent = 'Enter a valid email address.'; em.focus(); return; }
-  $('#buySend').disabled = true; msg.textContent = 'Opening PayFast…';
+async function startPayfast(email, say, done) {
+  say('Opening PayFast…');
   try {
     const { ok, j } = await api('/checkout', { email });
-    if (!ok || !j.action || !Array.isArray(j.fields)) { $('#buySend').disabled = false; msg.textContent = j.message || 'Couldn’t start the payment. Please try again.'; return; }
+    if (!ok || !j.action || !Array.isArray(j.fields)) { say(j.message || 'Couldn’t start the payment. Please try again.'); done(); return; }
     const f = document.createElement('form'); f.method = 'POST'; f.action = j.action;
     for (const [name, value] of j.fields) { const i = document.createElement('input'); i.type = 'hidden'; i.name = name; i.value = value; f.appendChild(i); }
     document.body.appendChild(f); f.submit();
-  } catch { $('#buySend').disabled = false; msg.textContent = 'Couldn’t reach the payment server. Please try again in a moment.'; }
+  } catch { say('Couldn’t reach the payment server. Please try again in a moment.'); done(); }
+}
+$('#buyForm').addEventListener('submit', async e => {
+  e.preventDefault(); const msg = $('#buyMsg'), em = $('#buyEmail'), email = em.value.trim();
+  if (!EMAIL_RE.test(email)) { msg.textContent = 'Enter a valid email address.'; em.focus(); return; }
+  $('#buySend').disabled = true;
+  startPayfast(email, t => { msg.textContent = t; }, () => { $('#buySend').disabled = false; });
 });
 $('#buyRestore').onclick = async () => {
   const msg = $('#buyMsg'), em = $('#buyEmail'), email = em.value.trim();
@@ -1639,18 +1652,22 @@ async function handleSsoArrival() {
   };
   openModal($('#ssoDlg'), $('#ssoKeep'));
 }
-// "Open Ledgerly": ask Ledgerly for a one-time link for this same account, in a new tab so unsaved work here is not lost.
-$('#filesLedgerly').onclick = async () => {
-  const btn = $('#filesLedgerly'), msg = $('#filesMsg'), w = window.open('', '_blank'); btn.disabled = true; msg.textContent = 'Opening Ledgerly…';
+// "Ledgerly" buttons (header and My Files): signed in, Ledgerly opens already signed in as the same account (it asks first if a
+// different one is open there); signed out, it simply opens. Always a new tab, so unsaved work here is not lost.
+async function openLedgerly(btn, msg) {
+  const w = window.open('', '_blank'), go = url => { if (w) w.location.href = url; else location.href = url; };
+  if (btn) btn.disabled = true; if (msg) msg.textContent = 'Opening Ledgerly…';
   try {
-    const { data } = await sb.auth.getSession(), jwt = data && data.session && data.session.access_token; if (!jwt) throw new Error('no session');
+    const { data } = sb ? await sb.auth.getSession() : { data: null }, jwt = data && data.session && data.session.access_token;
+    if (!jwt) { go(CONFIG.ledgerlyOrigin + '/'); if (msg) msg.textContent = ''; return; }
     const r = await fetch(CONFIG.ssoBase + '/handoff', { method: 'POST', headers: { 'content-type': 'application/json', authorization: 'Bearer ' + jwt }, body: '{}' }), j = await r.json();
     if (!r.ok || !j.url) throw new Error(j.message || 'failed');
-    if (w) w.location.href = j.url; else location.href = j.url;
-    msg.textContent = '';
-  } catch (err) { console.error(err); if (w) w.close(); msg.textContent = 'Couldn’t open Ledgerly from here. Go to ledgerly.ascsoftware.co.za and sign in with the same email.'; }
-  finally { btn.disabled = false; }
-};
+    go(j.url); if (msg) msg.textContent = '';
+  } catch (err) { console.error(err); go(CONFIG.ledgerlyOrigin + '/'); if (msg) msg.textContent = 'Opened Ledgerly. You may need to sign in there with the same email.'; }
+  finally { if (btn) btn.disabled = false; }
+}
+$('#filesLedgerly').onclick = () => openLedgerly($('#filesLedgerly'), $('#filesMsg'));
+$('#ledgerlyBtn').onclick = () => openLedgerly($('#ledgerlyBtn'), null);
 
 async function loadFiles() {
   const { data, error } = await sb.from('pdf_user_files').select('id,name,size,mime,path,created_at').order('created_at', { ascending: false });
