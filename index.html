@@ -372,13 +372,13 @@ a.btn{text-decoration:none}
 
   <section class="faq" aria-labelledby="faqh">
     <h2 id="faqh">Frequently Asked Questions</h2>
-    <details><summary>Are my files uploaded anywhere?</summary><p>Not unless you choose to. PDFs are opened, edited, merged, split and converted to Word, images or text inside your browser, so nothing is sent to a server. If you sign in and keep “Save files I upload to my account” on, your uploads are stored in private storage that only your account can open.</p></details>
-    <details><summary>Is this PDF editor really free?</summary><p>Yes. Editing, merging, splitting, rotating, signing, basic compression, JPG and PNG conversion and PDF to Word are free, with no watermark and no account. Pro adds larger files, batch work, strong compression, page numbers and watermarks.</p></details>
+    <details><summary>Are my files uploaded anywhere?</summary><p>Not unless you choose to. PDFs are opened, edited, merged, split and converted to Word, images or text inside your browser, so nothing is sent to a server. If you sign in and keep “Save files I upload to my account” on, your uploads are stored in private storage that only your account can open. OCR, Excel, PowerPoint and Office conversions also run in your browser; they download a helper the first time, and your files are not uploaded.</p></details>
+    <details><summary>Is this PDF editor really free?</summary><p>Yes. Editing, merging, splitting, rotating, signing, basic compression, JPG and PNG conversion and PDF to Word are free, with no watermark and no account. Pro adds larger files, OCR, Excel and PowerPoint conversion, batch work, strong compression, page numbers and watermarks.</p></details>
     <details><summary>Can I edit a PDF without Adobe Acrobat?</summary><p>Yes. Open your PDF here in any modern browser, add text, highlights, whiteout, images or a signature, then download the result. Nothing needs to be installed.</p></details>
     <details><summary>Does it work on my phone?</summary><p>Yes. The editor works in the browser on phones and tablets as well as on computers.</p></details>
     <details><summary>Do I need an account?</summary><p>No. Every free tool works without one. A free account saves up to 20 of the files you upload, up to 25&nbsp;MB each, so you can add them again from My Files on any device. You can delete saved files at any time.</p></details>
-    <details><summary>How good is PDF to Word?</summary><p>It keeps the text, reading order, heading sizes, indents and page breaks, and the result opens and edits in Word. Images, tables and exact layout are not recreated, and scanned PDFs (pictures of text) can’t be read yet.</p></details>
-    <details><summary>What does Pro include?</summary><p>PDF to Word is free. Pro adds documents over 100 pages and files over 25&nbsp;MB, batch splitting and converting, strong compression, page numbers and watermarks.</p></details>
+    <details><summary>How good is PDF to Word?</summary><p>It keeps the text, reading order, heading sizes, indents and page breaks, and the result opens and edits in Word. Images, tables and exact layout are not recreated, and scanned PDFs need OCR (Pro) first.</p></details>
+    <details><summary>What does Pro include?</summary><p>PDF to Word is free. Pro adds documents over 100 pages and files over 25&nbsp;MB, conversion from PDF to Excel and PowerPoint and from Word, Excel and PowerPoint files to PDF, OCR for scanned PDFs, batch splitting and converting, strong compression, page numbers and watermarks.</p></details>
     <details><summary>How do I merge PDFs?</summary><p>Add several PDFs, drag the pages into the order you want, then choose Download PDF.</p></details>
     <details><summary>How do I split a PDF or extract pages?</summary><p>Tick the pages you want, then choose Download Selected. To remove pages, select them and choose Delete.</p></details>
     <details><summary>How do I sign a PDF?</summary><p>Open a page with the pencil button, choose Signature, draw it, then drag it into place and resize it.</p></details>
@@ -448,6 +448,8 @@ a.btn{text-decoration:none}
     <p id="proWhy" class="lede" style="margin:0 0 4px"></p>
     <ul class="plist">
       <li>Documents over 100 pages and files over 25&nbsp;MB</li>
+      <li>Convert PDF to Excel and PowerPoint, and Word, Excel or PowerPoint files to PDF</li>
+      <li>OCR for scanned PDFs</li>
       <li>Batch work: split into many files and convert several files at once</li>
       <li>Strong compression, page numbers and watermarks</li>
     </ul>
@@ -1337,12 +1339,12 @@ $('#spRange').onclick = async () => {
 
 /* ---------- convert ---------- */
 const TARGETS = {
-  pdf: [{ id: 'jpg', label: 'JPG images' }, { id: 'png', label: 'PNG images' }, { id: 'txt', label: 'Plain text' }, { id: 'docx', label: 'Word (.docx)' }],
+  pdf: [{ id: 'jpg', label: 'JPG images' }, { id: 'png', label: 'PNG images' }, { id: 'txt', label: 'Plain text' }, { id: 'docx', label: 'Word (.docx)' }, { id: 'xlsx', label: 'Excel (.xlsx)', pro: 'office' }, { id: 'pptx', label: 'PowerPoint (.pptx)', pro: 'office' }, { id: 'ocr', label: 'Searchable PDF (OCR)', pro: 'ocr' }],
   image: [{ id: 'png', label: 'PNG' }, { id: 'jpg', label: 'JPG' }, { id: 'webp', label: 'WebP' }],
   office: [{ id: 'pdf', label: 'PDF', pro: 'office' }]
 };
 const CONVERT = { pdf2img: ['pdf', 'jpg'], pdf2txt: ['pdf', 'txt'], imgconv: ['image', 'png'], pdf2word: ['pdf', 'docx'], pdf2excel: ['pdf', 'xlsx'], pdf2ppt: ['pdf', 'pptx'], word2pdf: ['office', 'pdf'], ocr: ['pdf', 'ocr'] };
-const ACCEPT = { pdf: 'application/pdf,.pdf', image: 'image/*', office: '.doc,.docx,.xls,.xlsx,.ppt,.pptx,.odt,.ods,.odp,.rtf' };
+const ACCEPT = { pdf: 'application/pdf,.pdf', image: 'image/*', office: '.docx,.xlsx,.pptx' };
 const conv = { files: [], kind: 'pdf', target: 'jpg', busy: false };
 function kindOf(f) {
   if (f.type === 'application/pdf' || /\.pdf$/i.test(f.name)) return 'pdf';
@@ -1459,6 +1461,248 @@ async function imageConvert(file, fmt) {
   const b = await toBlob(c, { jpg: 'image/jpeg', png: 'image/png', webp: 'image/webp' }[fmt], 0.92);
   return { name: file.name.replace(/\.[^.]+$/, '') + '.' + fmt, data: new Uint8Array(await b.arrayBuffer()) };
 }
+/* ---------- Pro conversions that run on this device: OCR, PDF to Excel, PDF to PowerPoint, Office to PDF ---------- */
+// Extra helpers (OCR, Word and Excel readers) load from a CDN only when one of these tools is used, so the page stays light.
+const libPromises = {};
+const loadLib = (key, src, ready) => libPromises[key] || (libPromises[key] = (ready() ? Promise.resolve() : new Promise((res, rej) => {
+  const s = document.createElement('script'); s.src = src; s.crossOrigin = 'anonymous'; s.onload = res; s.onerror = () => rej(new Error('lib')); document.head.appendChild(s);
+})).catch(e => { delete libPromises[key]; throw e; }));
+const H_XML = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
+const attrText = t => xmlText(t).replace(/"/g, '&quot;');
+async function renderPageCanvas(pg, scale) {
+  const vp = pg.getViewport({ scale }), c = document.createElement('canvas'); c.width = Math.ceil(vp.width); c.height = Math.ceil(vp.height);
+  const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height); await pg.render({ canvasContext: x, viewport: vp }).promise; return c;
+}
+const zipFile = (name, text) => ({ name, data: new TextEncoder().encode(text) });
+const ansiCache = new WeakMap();
+// Standard PDF fonts only know Western letters; anything else is replaced so a page never fails to draw.
+function ansi(font, text) {
+  let known = ansiCache.get(font); if (!known) { known = new Map(); ansiCache.set(font, known); }
+  let out = '';
+  for (const ch of String(text).replace(/\u00a0/g, ' ').replace(/[\u2028\u2029]/g, '\n')) {
+    let ok = known.get(ch);
+    if (ok === undefined) { try { if (ch !== '\n') font.encodeText(ch); ok = true; } catch { ok = false; } known.set(ch, ok); }
+    out += ok ? ch : '?';
+  }
+  return out;
+}
+
+/* PDF to Excel: text is grouped into rows, then into columns by where it starts on the page. One sheet per page. */
+function cellNumber(raw) {
+  let t = raw.replace(/[\s\u00a0]/g, '').replace(/^R(?=[\d-])/, '').replace(/%$/, '');
+  if (!/^-?[\d.,]+$/.test(t) || !/\d/.test(t)) return null;
+  if (/^-?0\d/.test(t)) return null;                       // codes and phone numbers keep their leading zero
+  if (t.replace(/\D/g, '').length > 15) return null;
+  const lastDot = t.lastIndexOf('.'), lastComma = t.lastIndexOf(',');
+  if (lastDot >= 0 && lastComma >= 0) { const dec = lastDot > lastComma ? '.' : ','; t = t.split(dec === '.' ? ',' : '.').join('').replace(dec, '.'); }
+  else if (lastComma >= 0) { const after = t.length - lastComma - 1; if (t.split(',').length > 2 || after === 3) return null; t = t.replace(',', '.'); }
+  else if (lastDot >= 0) { const after = t.length - lastDot - 1; if (t.split('.').length > 2 || after === 3) return null; }
+  const n = Number(t); return Number.isFinite(n) ? n : null;
+}
+async function pageRows(pg) {
+  const tc = await pg.getTextContent();
+  const its = tc.items.filter(it => it.str && it.str.trim()).map(it => ({ s: it.str, x: it.transform[4], y: it.transform[5], w: it.width || 0, h: Math.abs(it.transform[3]) || it.height || 10 }));
+  if (!its.length) return [];
+  its.sort((a, b) => b.y - a.y || a.x - b.x);
+  const rows = [];
+  for (const it of its) { const r = rows[rows.length - 1]; if (r && Math.abs(it.y - r.y) <= Math.max(2, it.h * 0.5)) r.items.push(it); else rows.push({ y: it.y, items: [it] }); }
+  const cells = rows.map(r => {
+    r.items.sort((a, b) => a.x - b.x); const cs = []; let cur = null;
+    for (const it of r.items) {
+      if (cur && it.x - cur.end < Math.max(it.h * 0.9, 3)) { cur.text += (it.x - cur.end > it.h * 0.15 && !/\s$/.test(cur.text) && !/^\s/.test(it.s) ? ' ' : '') + it.s; cur.end = it.x + it.w; }
+      else { cur = { x: it.x, end: it.x + it.w, text: it.s }; cs.push(cur); }
+    }
+    return cs;
+  });
+  const xs = cells.flat().map(c => c.x).sort((a, b) => a - b), anchors = [];
+  for (const x of xs) { const a = anchors[anchors.length - 1]; if (a && x - a.max <= 6) { a.max = x; a.sum += x; a.n++; } else anchors.push({ max: x, sum: x, n: 1 }); }
+  const ax = anchors.map(a => a.sum / a.n), nearest = x => { let k = 0, d = Infinity; ax.forEach((v, i) => { const e = Math.abs(v - x); if (e < d) { d = e; k = i; } }); return k; };
+  return cells.map(cs => { const row = []; for (const c of cs) { let k = nearest(c.x); while (row[k] !== undefined) k++; row[k] = c.text.trim(); } return row; });
+}
+const colName = i => { let s = ''; for (i++; i > 0; i = Math.floor((i - 1) / 26)) s = String.fromCharCode(65 + ((i - 1) % 26)) + s; return s; };
+async function pdfToXlsx(file, prog) {
+  const doc = await pdfDoc(file), sheets = [];
+  for (let n = 1; n <= doc.numPages; n++) {
+    const rows = await pageRows(await doc.getPage(n)); prog && prog(n, doc.numPages);
+    if (!rows.length) continue;
+    const xml = rows.map((row, r) => {
+      const cs = []; for (let c = 0; c < row.length; c++) {
+        if (row[c] === undefined || row[c] === '') continue; const ref = colName(c) + (r + 1), num = cellNumber(row[c]);
+        cs.push(num !== null ? `<c r="${ref}"><v>${num}</v></c>` : `<c r="${ref}" t="inlineStr"><is><t xml:space="preserve">${xmlText(row[c])}</t></is></c>`);
+      }
+      return `<row r="${r + 1}">${cs.join('')}</row>`;
+    }).join('');
+    sheets.push({ name: `Page ${n}`, xml });
+  }
+  if (!sheets.length) return null;
+  const NS = 'xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"', R = 'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"', REL = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
+  const files = [
+    zipFile('[Content_Types].xml', `${H_XML}<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>${sheets.map((s, i) => `<Override PartName="/xl/worksheets/sheet${i + 1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`).join('')}</Types>`),
+    zipFile('_rels/.rels', `${H_XML}<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="${REL}/officeDocument" Target="xl/workbook.xml"/></Relationships>`),
+    zipFile('xl/workbook.xml', `${H_XML}<workbook ${NS} ${R}><sheets>${sheets.map((s, i) => `<sheet name="${attrText(s.name)}" sheetId="${i + 1}" r:id="rId${i + 1}"/>`).join('')}</sheets></workbook>`),
+    zipFile('xl/_rels/workbook.xml.rels', `${H_XML}<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${sheets.map((s, i) => `<Relationship Id="rId${i + 1}" Type="${REL}/worksheet" Target="worksheets/sheet${i + 1}.xml"/>`).join('')}<Relationship Id="rId${sheets.length + 1}" Type="${REL}/styles" Target="styles.xml"/></Relationships>`),
+    zipFile('xl/styles.xml', `${H_XML}<styleSheet ${NS}><fonts count="1"><font><sz val="11"/><name val="Calibri"/></font></fonts><fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/></cellXfs></styleSheet>`),
+    ...sheets.map((s, i) => zipFile(`xl/worksheets/sheet${i + 1}.xml`, `${H_XML}<worksheet ${NS}><sheetData>${s.xml}</sheetData></worksheet>`))
+  ];
+  return { name: file.name.replace(/\.pdf$/i, '') + '.xlsx', data: new Uint8Array(await makeZip(files).arrayBuffer()) };
+}
+
+/* PDF to PowerPoint: every page becomes a slide holding the page as a picture, with the page's text as the picture's description. */
+async function pdfToPptx(file, prog) {
+  const doc = await pdfDoc(file), slides = []; let cx = 12192000, cy = 6858000;
+  for (let n = 1; n <= doc.numPages; n++) {
+    const pg = await doc.getPage(n), v = pg.view, pw = v[2] - v[0], ph = v[3] - v[1];
+    if (n === 1) { if (ph > pw) { cy = 12192000; cx = Math.max(3000000, Math.round(cy * pw / ph)); } else { cx = 12192000; cy = Math.max(3000000, Math.round(cx * ph / pw)); } }
+    const c = await renderPageCanvas(pg, 2), png = new Uint8Array(await (await toBlob(c, 'image/png')).arrayBuffer());
+    const tc = await pg.getTextContent(), alt = tc.items.map(i => i.str).join(' ').replace(/\s+/g, ' ').trim().slice(0, 900);
+    slides.push({ png, alt: alt || `Page ${n}`, ratio: ph / pw }); prog && prog(n, doc.numPages);
+  }
+  const NSA = 'xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"', NSR = 'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"', NSP = 'xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"';
+  const REL = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships', GRP = '<p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr><p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr>';
+  const theme = `${H_XML}<a:theme ${NSA} name="Office Theme"><a:themeElements><a:clrScheme name="Office"><a:dk1><a:srgbClr val="000000"/></a:dk1><a:lt1><a:srgbClr val="FFFFFF"/></a:lt1><a:dk2><a:srgbClr val="44546A"/></a:dk2><a:lt2><a:srgbClr val="E7E6E6"/></a:lt2><a:accent1><a:srgbClr val="4472C4"/></a:accent1><a:accent2><a:srgbClr val="ED7D31"/></a:accent2><a:accent3><a:srgbClr val="A5A5A5"/></a:accent3><a:accent4><a:srgbClr val="FFC000"/></a:accent4><a:accent5><a:srgbClr val="5B9BD5"/></a:accent5><a:accent6><a:srgbClr val="70AD47"/></a:accent6><a:hlink><a:srgbClr val="0563C1"/></a:hlink><a:folHlink><a:srgbClr val="954F72"/></a:folHlink></a:clrScheme><a:fontScheme name="Office"><a:majorFont><a:latin typeface="Calibri"/><a:ea typeface=""/><a:cs typeface=""/></a:majorFont><a:minorFont><a:latin typeface="Calibri"/><a:ea typeface=""/><a:cs typeface=""/></a:minorFont></a:fontScheme><a:fmtScheme name="Office"><a:fillStyleLst><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:fillStyleLst><a:lnStyleLst><a:ln w="6350"><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:ln><a:ln w="12700"><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:ln><a:ln w="19050"><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:ln></a:lnStyleLst><a:effectStyleLst><a:effectStyle><a:effectLst/></a:effectStyle><a:effectStyle><a:effectLst/></a:effectStyle><a:effectStyle><a:effectLst/></a:effectStyle></a:effectStyleLst><a:bgFillStyleLst><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:solidFill><a:schemeClr val="phClr"/></a:solidFill><a:solidFill><a:schemeClr val="phClr"/></a:solidFill></a:bgFillStyleLst></a:fmtScheme></a:themeElements></a:theme>`;
+  const nS = slides.length, files = [
+    zipFile('[Content_Types].xml', `${H_XML}<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Default Extension="png" ContentType="image/png"/><Override PartName="/ppt/presentation.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.presentation.main+xml"/><Override PartName="/ppt/slideMasters/slideMaster1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slideMaster+xml"/><Override PartName="/ppt/slideLayouts/slideLayout1.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slideLayout+xml"/><Override PartName="/ppt/theme/theme1.xml" ContentType="application/vnd.openxmlformats-officedocument.theme+xml"/>${slides.map((s, i) => `<Override PartName="/ppt/slides/slide${i + 1}.xml" ContentType="application/vnd.openxmlformats-officedocument.presentationml.slide+xml"/>`).join('')}</Types>`),
+    zipFile('_rels/.rels', `${H_XML}<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="${REL}/officeDocument" Target="ppt/presentation.xml"/></Relationships>`),
+    zipFile('ppt/presentation.xml', `${H_XML}<p:presentation ${NSA} ${NSR} ${NSP}><p:sldMasterIdLst><p:sldMasterId id="2147483648" r:id="rId1"/></p:sldMasterIdLst><p:sldIdLst>${slides.map((s, i) => `<p:sldId id="${256 + i}" r:id="rId${i + 3}"/>`).join('')}</p:sldIdLst><p:sldSz cx="${cx}" cy="${cy}"/><p:notesSz cx="6858000" cy="9144000"/></p:presentation>`),
+    zipFile('ppt/_rels/presentation.xml.rels', `${H_XML}<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="${REL}/slideMaster" Target="slideMasters/slideMaster1.xml"/><Relationship Id="rId2" Type="${REL}/theme" Target="theme/theme1.xml"/>${slides.map((s, i) => `<Relationship Id="rId${i + 3}" Type="${REL}/slide" Target="slides/slide${i + 1}.xml"/>`).join('')}</Relationships>`),
+    zipFile('ppt/slideMasters/slideMaster1.xml', `${H_XML}<p:sldMaster ${NSA} ${NSR} ${NSP}><p:cSld><p:spTree>${GRP}</p:spTree></p:cSld><p:clrMap bg1="lt1" tx1="dk1" bg2="lt2" tx2="dk2" accent1="accent1" accent2="accent2" accent3="accent3" accent4="accent4" accent5="accent5" accent6="accent6" hlink="hlink" folHlink="folHlink"/><p:sldLayoutIdLst><p:sldLayoutId id="2147483649" r:id="rId1"/></p:sldLayoutIdLst></p:sldMaster>`),
+    zipFile('ppt/slideMasters/_rels/slideMaster1.xml.rels', `${H_XML}<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="${REL}/slideLayout" Target="../slideLayouts/slideLayout1.xml"/><Relationship Id="rId2" Type="${REL}/theme" Target="../theme/theme1.xml"/></Relationships>`),
+    zipFile('ppt/slideLayouts/slideLayout1.xml', `${H_XML}<p:sldLayout ${NSA} ${NSR} ${NSP} type="blank" preserve="1"><p:cSld name="Blank"><p:spTree>${GRP}</p:spTree></p:cSld><p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr></p:sldLayout>`),
+    zipFile('ppt/slideLayouts/_rels/slideLayout1.xml.rels', `${H_XML}<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="${REL}/slideMaster" Target="../slideMasters/slideMaster1.xml"/></Relationships>`),
+    zipFile('ppt/theme/theme1.xml', theme)
+  ];
+  slides.forEach((s, i) => {
+    let w = cx, h = Math.round(cx * s.ratio); if (h > cy) { h = cy; w = Math.round(cy / s.ratio); }
+    const ox = Math.round((cx - w) / 2), oy = Math.round((cy - h) / 2);
+    files.push(zipFile(`ppt/slides/slide${i + 1}.xml`, `${H_XML}<p:sld ${NSA} ${NSR} ${NSP}><p:cSld><p:spTree>${GRP}<p:pic><p:nvPicPr><p:cNvPr id="2" name="Page ${i + 1}" descr="${attrText(s.alt)}"/><p:cNvPicPr><a:picLocks noChangeAspect="1"/></p:cNvPicPr><p:nvPr/></p:nvPicPr><p:blipFill><a:blip r:embed="rId2"/><a:stretch><a:fillRect/></a:stretch></p:blipFill><p:spPr><a:xfrm><a:off x="${ox}" y="${oy}"/><a:ext cx="${w}" cy="${h}"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr></p:pic></p:spTree></p:cSld><p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr></p:sld>`));
+    files.push(zipFile(`ppt/slides/_rels/slide${i + 1}.xml.rels`, `${H_XML}<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="${REL}/slideLayout" Target="../slideLayouts/slideLayout1.xml"/><Relationship Id="rId2" Type="${REL}/image" Target="../media/image${i + 1}.png"/></Relationships>`));
+    files.push({ name: `ppt/media/image${i + 1}.png`, data: s.png });
+  });
+  return { name: file.name.replace(/\.pdf$/i, '') + '.pptx', data: new Uint8Array(await makeZip(files).arrayBuffer()) };
+}
+
+/* OCR: reads each page with Tesseract (English) and writes a PDF where the page picture has an invisible, searchable text layer. */
+async function pdfToOcr(file, prog) {
+  await loadLib('tess', 'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js', () => window.Tesseract);
+  const doc = await pdfDoc(file), out = await PDFDocument.create(), font = await out.embedFont(StandardFonts.Helvetica), worker = await Tesseract.createWorker('eng'); let words = 0;
+  try {
+    for (let n = 1; n <= doc.numPages; n++) {
+      const pg = await doc.getPage(n), v = pg.view, pw = v[2] - v[0], ph = v[3] - v[1], S = 2, c = await renderPageCanvas(pg, S);
+      prog && prog(n, doc.numPages);
+      const { data } = await worker.recognize(c), jpg = await out.embedJpg(new Uint8Array(await (await toBlob(c, 'image/jpeg', 0.85)).arrayBuffer()));
+      const page = out.addPage([pw, ph]); page.drawImage(jpg, { x: 0, y: 0, width: pw, height: ph });
+      for (const w of (data.words || [])) {
+        const t = ansi(font, w.text).trim(); if (!t || !w.bbox) continue; const h = (w.bbox.y1 - w.bbox.y0) / S; words++;
+        page.drawText(t, { x: w.bbox.x0 / S, y: ph - w.bbox.y1 / S + h * 0.2, size: Math.max(3, h * 0.85), font, opacity: 0 });
+      }
+    }
+  } finally { await worker.terminate(); }
+  if (!words) return null;
+  return { name: file.name.replace(/\.pdf$/i, '') + '-ocr.pdf', data: new Uint8Array(await out.save()) };
+}
+
+/* Office to PDF: Word (.docx), Excel (.xlsx) and PowerPoint (.pptx). Text, headings, lists, simple tables and pictures are kept;
+   fonts, colours and exact layout are approximated. */
+async function layoutPdf(blocks, opts = {}) {
+  const doc = await PDFDocument.create(), F = { r: await doc.embedFont(StandardFonts.Helvetica), b: await doc.embedFont(StandardFonts.HelveticaBold), i: await doc.embedFont(StandardFonts.HelveticaOblique), bi: await doc.embedFont(StandardFonts.HelveticaBoldOblique) };
+  const [PW, PH] = opts.size || (opts.landscape ? [841.89, 595.28] : [595.28, 841.89]), M = opts.margin || 50, TW = PW - 2 * M;
+  let page = null, y = 0; const newPage = () => { page = doc.addPage([PW, PH]); y = PH - M; };
+  const need = h => { if (!page || y - h < M) newPage(); };
+  const fnt = s => F[((s.b ? 'b' : '') + (s.i ? 'i' : '')) || 'r'];
+  const wrap = (runs, size, maxW) => {
+    const lines = []; let line = [], w = 0;
+    const flush = () => { lines.push({ parts: line, w }); line = []; w = 0; };
+    for (const run of runs) {
+      const f = fnt(run);
+      for (const tok of ansi(f, run.t).split(/(\n|[ \t]+)/)) {
+        if (tok === '') continue; if (tok === '\n') { flush(); continue; }
+        const space = /^[ \t]+$/.test(tok), tw = f.widthOfTextAtSize(space ? ' ' : tok, size) * (space ? tok.length : 1);
+        if (!space && w + tw > maxW && w > 0) flush();
+        if (space && w === 0) continue;
+        if (!space && tw > maxW) { let piece = ''; for (const ch of tok) { if (f.widthOfTextAtSize(piece + ch, size) > maxW) { line.push({ t: piece, f, w: f.widthOfTextAtSize(piece, size) }); w += f.widthOfTextAtSize(piece, size); flush(); piece = ''; } piece += ch; } if (piece) { line.push({ t: piece, f, w: f.widthOfTextAtSize(piece, size) }); w += f.widthOfTextAtSize(piece, size); } continue; }
+        line.push({ t: space ? ' '.repeat(tok.length) : tok, f, w: tw }); w += tw;
+      }
+    }
+    if (line.length || !lines.length) flush(); return lines;
+  };
+  const chunks = parts => { const o = []; for (const p of parts) { const l = o[o.length - 1]; if (l && l.f === p.f) { l.t += p.t; l.w += p.w; } else o.push({ t: p.t, f: p.f, w: p.w }); } return o; };
+  const draw = (lines, x, size, lead) => { for (const ln of lines) { need(lead); y -= lead * 0.8; let cx = x; for (const p of chunks(ln.parts)) { if (p.t.trim()) page.drawText(p.t, { x: cx, y, size, font: p.f, color: rgb(0.06, 0.09, 0.16) }); cx += p.w; } y -= lead * 0.2; } };
+  for (const b of blocks) {
+    if (b.k === 'pb') { page = null; continue; }
+    if (b.k === 'h') { const size = [22, 18, 15, 13, 12, 11][Math.min(5, (b.lvl || 1) - 1)]; y -= 8; draw(wrap(b.runs.map(r => ({ ...r, b: true })), size, TW), M, size, size * 1.3); y -= 4; }
+    else if (b.k === 'p') { draw(wrap(b.runs, b.size || 11, TW), M, b.size || 11, (b.size || 11) * 1.4); y -= 5; }
+    else if (b.k === 'li') { const ind = 16 + (b.lvl || 0) * 16, lines = wrap(b.runs, 11, TW - ind); need(15); const mark = b.n ? `${b.n}.` : '•'; page.drawText(ansi(F.r, mark), { x: M + ind - 14, y: y - 11 * 0.8 * 1.4 + 0.5, size: 11, font: F.r }); draw(lines, M + ind, 11, 15); y -= 2; }
+    else if (b.k === 't') {
+      const rows = b.rows.filter(r => r.some(c => c)), cols = Math.min(24, Math.max(...rows.map(r => r.length), 1)); if (!rows.length) continue;
+      const size = b.size || Math.max(6, Math.min(9.5, 11 - cols * 0.35)), lead = size * 1.35, pad = 3;
+      const weight = Array.from({ length: cols }, (_, c) => Math.max(4, Math.min(40, ...[Math.max(...rows.map(r => String(r[c] || '').length), 4)]))), sum = weight.reduce((a, v) => a + v, 0), cw = weight.map(v => TW * v / sum);
+      rows.forEach((r, ri) => {
+        const cells = cw.map((w, c) => wrap([{ t: String(r[c] ?? ''), b: ri === 0 && b.header !== false }], size, w - 2 * pad)), hgt = Math.max(...cells.map(l => l.length)) * lead + 2 * pad;
+        need(Math.min(hgt, PH - 2 * M)); let x = M; const top = y;
+        cells.forEach((lines, c) => { page.drawRectangle({ x, y: top - hgt, width: cw[c], height: hgt, borderColor: rgb(0.75, 0.78, 0.82), borderWidth: 0.5, color: ri === 0 && b.header !== false ? rgb(0.94, 0.96, 0.97) : undefined }); let ty = top - pad; for (const ln of lines) { ty -= lead * 0.8; let cx = x + pad; for (const p of chunks(ln.parts)) { if (p.t.trim()) page.drawText(p.t, { x: cx, y: ty, size, font: p.f, color: rgb(0.06, 0.09, 0.16) }); cx += p.w; } ty -= lead * 0.2; } x += cw[c]; });
+        y = top - hgt;
+      }); y -= 8;
+    } else if (b.k === 'img') {
+      try {
+        const img = /png/i.test(b.mime) ? await doc.embedPng(b.bytes) : await doc.embedJpg(b.bytes), s = Math.min(1, TW / img.width, (PH - 2 * M) / img.height), w = img.width * s, h = img.height * s;
+        need(h); page.drawImage(img, { x: M, y: y - h, width: w, height: h }); y -= h + 8;
+      } catch { /* a picture that cannot be read is skipped */ }
+    }
+  }
+  if (!doc.getPageCount()) newPage();
+  return new Uint8Array(await doc.save());
+}
+function inlineRuns(node, st = {}) {
+  const out = [];
+  node.childNodes.forEach(ch => {
+    if (ch.nodeType === 3) out.push({ t: ch.textContent, ...st });
+    else if (ch.nodeType === 1) { const tag = ch.tagName.toLowerCase(); if (tag === 'br') out.push({ t: '\n', ...st }); else if (tag !== 'img' && tag !== 'ul' && tag !== 'ol') out.push(...inlineRuns(ch, { ...st, b: st.b || tag === 'strong' || tag === 'b', i: st.i || tag === 'em' || tag === 'i' })); }
+  });
+  return out;
+}
+function htmlBlocks(root, blocks = [], lvl = 0) {
+  for (const el of root.children) {
+    const tag = el.tagName.toLowerCase();
+    if (/^h[1-6]$/.test(tag)) blocks.push({ k: 'h', lvl: +tag[1], runs: inlineRuns(el) });
+    else if (tag === 'p') {
+      el.querySelectorAll('img').forEach(im => { const m = /^data:(image\/(?:png|jpe?g));base64,(.+)$/i.exec(im.getAttribute('src') || ''); if (m) blocks.push({ k: 'img', mime: m[1], bytes: Uint8Array.from(atob(m[2]), c => c.charCodeAt(0)) }); });
+      const runs = inlineRuns(el); if (runs.some(r => r.t.trim())) blocks.push({ k: 'p', runs });
+    } else if (tag === 'ul' || tag === 'ol') {
+      [...el.children].forEach((li, n) => { blocks.push({ k: 'li', n: tag === 'ol' ? n + 1 : 0, lvl, runs: inlineRuns(li) }); htmlBlocks(li, blocks, lvl + 1); });
+    } else if (tag === 'table') blocks.push({ k: 't', rows: [...el.querySelectorAll('tr')].map(tr => [...tr.children].map(td => td.textContent.replace(/\s+/g, ' ').trim())) });
+    else htmlBlocks(el, blocks, lvl);
+  }
+  return blocks;
+}
+async function officeToPdf(file, prog) {
+  const ext = (/\.([^.]+)$/.exec(file.name) || [])[1]?.toLowerCase(), base = file.name.replace(/\.[^.]+$/, '');
+  if (!['docx', 'xlsx', 'pptx'].includes(ext)) throw new Error('unsupported');
+  const buf = await file.arrayBuffer(); let blocks = [], opts = {};
+  if (ext === 'docx') {
+    await loadLib('mammoth', 'https://cdn.jsdelivr.net/npm/mammoth@1.8.0/mammoth.browser.min.js', () => window.mammoth);
+    const { value } = await mammoth.convertToHtml({ arrayBuffer: buf }); blocks = htmlBlocks(new DOMParser().parseFromString(value, 'text/html').body);
+  } else if (ext === 'xlsx') {
+    await loadLib('sheetjs', 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.mini.min.js', () => window.XLSX);
+    const wb = XLSX.read(buf, { type: 'array' }); opts = { landscape: true, margin: 36 };
+    wb.SheetNames.forEach(name => {
+      const rows = XLSX.utils.sheet_to_json(wb.Sheets[name], { header: 1, raw: false, defval: '' }).slice(0, 3000);
+      blocks.push({ k: 'h', lvl: 2, runs: [{ t: name }] }); if (rows.length) blocks.push({ k: 't', rows: rows.map(r => r.map(c => String(c))), header: true }); else blocks.push({ k: 'p', runs: [{ t: 'This sheet is empty.' }] });
+    });
+  } else {
+    await loadLib('fflate', 'https://cdn.jsdelivr.net/npm/fflate@0.8.2/umd/index.js', () => window.fflate);
+    const z = fflate.unzipSync(new Uint8Array(buf)), slides = Object.keys(z).map(k => /^ppt\/slides\/slide(\d+)\.xml$/.exec(k)).filter(Boolean).sort((a, b) => a[1] - b[1]);
+    opts = { size: [960, 540], margin: 48 };
+    slides.forEach((m, i) => {
+      const xml = new DOMParser().parseFromString(new TextDecoder().decode(z[m[0]]), 'application/xml'), paras = [...xml.getElementsByTagName('a:p')].map(p => [...p.getElementsByTagName('a:t')].map(t => t.textContent).join('')).filter(t => t.trim());
+      if (i) blocks.push({ k: 'pb' }); blocks.push({ k: 'h', lvl: 1, runs: [{ t: paras[0] || `Slide ${i + 1}` }] });
+      paras.slice(1).forEach(t => blocks.push({ k: 'p', runs: [{ t }], size: 16 }));
+    });
+  }
+  prog && prog(1, 1);
+  if (!blocks.length) return null;
+  return { name: base + '.pdf', data: await layoutPdf(blocks, opts) };
+}
+const LOCAL_TOOLS = { xlsx: pdfToXlsx, pptx: pdfToPptx, ocr: pdfToOcr };
 async function serverConvert(file, target) {
   if (!CONFIG.convertEndpoint) throw new Error('not-connected');
   const fd = new FormData(); fd.append('file', file); fd.append('target', target); fd.append('key', pro.key);
@@ -1468,7 +1712,6 @@ async function serverConvert(file, target) {
 }
 $('#convGo').onclick = async () => {
   const t = TARGETS[conv.kind].find(x => x.id === conv.target), msg = $('#convMsg'); if (!conv.files.length || conv.busy) return;
-  if (t.pro && !CONFIG.convertEndpoint) { msg.textContent = 'This conversion is coming soon.'; return; }
   if (t.pro && !gate(t.pro)) return;
   if (conv.files.length > FREE.batch && !gate('batch')) return;
   conv.busy = true; $('#convGo').disabled = true; const out = [];
@@ -1476,23 +1719,36 @@ $('#convGo').onclick = async () => {
     for (let i = 0; i < conv.files.length; i++) {
       const f = conv.files[i]; msg.textContent = `Converting ${i + 1} of ${conv.files.length}…`;
       if (!pro.active && f.size > FREE.bytes) { gate('bigfile'); throw new Error('gated'); }
-      if (t.pro) out.push(await serverConvert(f, t.id));
+      if (t.pro) {
+        const step = (a, b) => { msg.textContent = `File ${i + 1} of ${conv.files.length}: page ${a} of ${b}…`; };
+        if (t.id === 'ocr') msg.textContent = `File ${i + 1} of ${conv.files.length}: getting the reader ready. The first time can take a minute…`;
+        const d = conv.kind === 'office' ? await officeToPdf(f, step) : await LOCAL_TOOLS[t.id](f, step);
+        if (!d) { msg.textContent = conv.kind === 'office' ? `${f.name} looks empty.` : t.id === 'ocr' ? `No text could be read in ${f.name}.` : `No text found in ${f.name}. It may be a scan: try Searchable PDF (OCR) first.`; continue; }
+        out.push(d);
+      }
       else if (conv.kind === 'pdf' && t.id === 'txt') {
         const tx = await pdfToText(f);
-        if (tx === null) { msg.textContent = `No text found in ${f.name}. It may be a scan, and this tool can’t read scans yet.`; continue; }
+        if (tx === null) { msg.textContent = `No text found in ${f.name}. It may be a scan, and Searchable PDF (OCR, Pro) can read it.`; continue; }
         out.push({ name: f.name.replace(/\.pdf$/i, '') + '.txt', data: new TextEncoder().encode(tx) });
       } else if (conv.kind === 'pdf' && t.id === 'docx') {
         const d = await pdfToDocx(f, (n, m) => { msg.textContent = `File ${i + 1} of ${conv.files.length}: page ${n} of ${m}…`; });
-        if (!d) { msg.textContent = `No text found in ${f.name}. It may be a scan, and this tool can’t read scans yet.`; continue; }
+        if (!d) { msg.textContent = `No text found in ${f.name}. It may be a scan, and Searchable PDF (OCR, Pro) can read it.`; continue; }
         out.push(d);
       } else if (conv.kind === 'pdf') out.push(...await pdfToImages(f, t.id, (n, m) => { msg.textContent = `File ${i + 1} of ${conv.files.length}: page ${n} of ${m}…`; }));
       else out.push(await imageConvert(f, t.id));
     }
     if (!out.length) return;
-    if (out.length === 1) { const o = out[0]; await saveBlob(new Blob([o.data], { type: /\.txt$/.test(o.name) ? 'text/plain' : /\.docx$/.test(o.name) ? WORD_MIME : '' }), o.name); msg.textContent = /\.docx$/.test(o.name) ? `Saved ${o.name}. Text and headings are kept. Images, tables and exact layout are not.` : `Saved ${o.name}.`; }
+    if (out.length === 1) {
+      const o = out[0], MIME = { txt: 'text/plain', docx: WORD_MIME, xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation', pdf: 'application/pdf' }, ext = (/\.([^.]+)$/.exec(o.name) || [])[1];
+      await saveBlob(new Blob([o.data], { type: MIME[ext] || '' }), o.name);
+      const NOTE = { docx: ' Text and headings are kept. Images, tables and exact layout are not.', xlsx: ' Each page is a sheet. Check that the columns lined up.', pptx: ' Each page is a slide, kept as a picture.', pdf: t.id === 'ocr' ? ' The text is searchable and selectable. Check it against the page.' : conv.kind === 'office' ? ' Text, headings, lists, simple tables and pictures are kept. Fonts and exact layout are approximate.' : '' };
+      msg.textContent = `Saved ${o.name}.` + (NOTE[ext] || '');
+    }
     else { const z = makeZip(out); await saveBlob(z, 'converted.zip'); msg.textContent = `Saved ${out.length} files in converted.zip.`; }
   } catch (err) {
-    if (err.message === 'not-connected') msg.textContent = 'This conversion runs on a server that isn’t connected yet.';
+    if (err.message === 'unsupported') msg.textContent = 'That Office format isn’t supported. Save the file as .docx, .xlsx or .pptx first.';
+    else if (err.message === 'lib') msg.textContent = 'Couldn’t load the helper this tool needs. Check your connection and try again.';
+    else if (err.message === 'not-connected') msg.textContent = 'This conversion runs on a server that isn’t connected yet.';
     else if (err.message !== 'gated') { console.error(err); msg.textContent = 'That conversion failed. The file may be damaged or unsupported.'; }
   } finally { conv.busy = false; renderConv(); }
 };
@@ -1531,10 +1787,10 @@ const TOOLS = [
   { g: 'Convert', id: 'pdf2txt', icon: 'text', name: 'PDF to Text', desc: 'Pull out the text' },
   { g: 'Convert', id: 'imgconv', icon: 'swap', name: 'Image Converter', desc: 'PNG, JPG and WebP' },
   { g: 'Convert', id: 'pdf2word', icon: 'word', name: 'PDF to Word', desc: 'Editable .docx' },
-  { g: 'Convert', id: 'pdf2excel', icon: 'excel', name: 'PDF to Excel', desc: 'Tables to .xlsx', soon: true },
-  { g: 'Convert', id: 'pdf2ppt', icon: 'ppt', name: 'PDF to PowerPoint', desc: 'Slides as .pptx', soon: true },
-  { g: 'Convert', id: 'word2pdf', icon: 'word', name: 'Office to PDF', desc: 'Word, Excel, PowerPoint', soon: true },
-  { g: 'Convert', id: 'ocr', icon: 'ocr', name: 'OCR Scanned PDF', desc: 'Make scans searchable', soon: true }
+  { g: 'Convert', id: 'pdf2excel', icon: 'excel', name: 'PDF to Excel', desc: 'Tables to .xlsx', pro: 'office' },
+  { g: 'Convert', id: 'pdf2ppt', icon: 'ppt', name: 'PDF to PowerPoint', desc: 'Slides as .pptx', pro: 'office' },
+  { g: 'Convert', id: 'word2pdf', icon: 'word', name: 'Office to PDF', desc: 'Word, Excel, PowerPoint', pro: 'office' },
+  { g: 'Convert', id: 'ocr', icon: 'ocr', name: 'OCR Scanned PDF', desc: 'Make scans searchable', pro: 'ocr' }
 ];
 function buildTiles() {
   const groups = [...new Set(TOOLS.map(t => t.g))];
