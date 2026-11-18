@@ -447,11 +447,11 @@ a.btn{text-decoration:none}
       <button type="button" class="btn primary" id="proBuy">Get Pro</button>
     </div>
     <form id="buyForm" class="early" hidden novalidate>
-      <p style="margin:0;font-weight:700">Where should we send your licence key?</p>
+      <p style="margin:0;font-weight:700">Your email, for your licence key and receipt</p>
       <div class="stack">
         <label class="field">Email<input type="email" id="buyEmail" name="email" autocomplete="email" spellcheck="false" placeholder="you@example.com"></label>
       </div>
-      <div class="row"><button type="submit" class="btn primary" id="buySend">Continue to PayFast</button></div>
+      <div class="row"><button type="submit" class="btn primary" id="buySend">Subscribe now</button></div>
       <p id="buyMsg" class="msg" role="status"></p>
       <p class="msg">You pay on PayFast’s own secure page. We never see your card details. <button type="button" class="linkbtn" id="buyRestore">Already subscribed? Email my key</button></p>
     </form>
@@ -570,7 +570,7 @@ const CONFIG = {
   checkoutUrl: '',       // optional: a payment page to open instead of the built-in PayFast checkout
   licenseEndpoint: 'https://ledgerly.ascsoftware.co.za/api/pdf/licence', // POST {key} -> {valid:true, expires:'2027-01-01T00:00:00Z'}. Empty = keys cannot be checked yet
   convertEndpoint: '',   // POST multipart {file, target, key} -> converted file bytes. Needs a server (Office, OCR)
-  price: 'R45 per month. Cancel any time.', // shown in the Pro window. Empty hides the price line
+  price: 'R44,99 per month. Cancel any time.', // shown in the Pro window. Empty hides the price line
   supabaseUrl: 'https://npoltdukdxrjqdqyiqmb.supabase.co', // accounts, saved files and early-access requests
   supabaseKey: 'sb_publishable_nlqR8OvqJzrpbYTJYsIwHQ_GYI284Og', // publishable key: safe in the page, protected by row level security
   devExpose: false       // leave false in production
@@ -1163,14 +1163,18 @@ function gate(feature) { if (pro.active) return true; openPro(feature); return f
 function openPro(feature) {
   $('#proWhy').textContent = WHY[feature] ? `Pro feature: ${WHY[feature]}.` : 'Pro unlocks the extra tools below.';
   $('#proPrice').textContent = CONFIG.price; $('#proPrice').hidden = !CONFIG.price;
-  const buy = $('#proBuy'); buy.textContent = (CONFIG.apiBase || CONFIG.checkoutUrl) ? 'Get Pro' : 'Request Early Access'; proFeature = feature || '';
+  const buy = $('#proBuy'); buy.textContent = CONFIG.apiBase ? 'Subscribe now' : CONFIG.checkoutUrl ? 'Get Pro' : 'Request Early Access'; proFeature = feature || '';
   $('#buyForm').hidden = true; $('#buyMsg').textContent = ''; $('#buySend').disabled = false;
   $('#earlyForm').hidden = true; $('#earlyMsg').textContent = ''; $('#earlySend').disabled = false; $('#earlyAddr').textContent = CONFIG.contactEmail;
   $('#keyMsg').textContent = ''; openModal($('#proDlg'), buy);
 }
 let proFeature = '';
 $('#proBuy').onclick = () => {
-  if (CONFIG.apiBase) { const f = $('#buyForm'), em = $('#buyEmail'); f.hidden = false; if (!em.value && acct.user) em.value = acct.user.email; f.scrollIntoView({ block: 'nearest' }); em.focus(); return; }
+  if (CONFIG.apiBase) {
+    const f = $('#buyForm'), em = $('#buyEmail'); if (!em.value && acct.user) em.value = acct.user.email;
+    if (acct.user && EMAIL_RE.test(em.value.trim())) { f.hidden = false; $('#buyForm').requestSubmit(); return; }
+    f.hidden = false; f.scrollIntoView({ block: 'nearest' }); em.focus(); return;
+  }
   if (CONFIG.checkoutUrl) { window.open(CONFIG.checkoutUrl, '_blank', 'noopener'); return; }
   const f = $('#earlyForm'), em = $('#earlyEmail'); f.hidden = false; if (!em.value && acct.user) em.value = acct.user.email;
   f.scrollIntoView({ block: 'nearest' }); em.focus();
