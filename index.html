@@ -1281,9 +1281,9 @@ async function loadPdfOffer() {
     if (j && j.eligible === false && !$('#proDlg').hidden) $('#proHint').hidden = false;
     if (!j || !j.eligible || !j.chargeCents || !j.discountCents || $('#proDlg').hidden) return;
     pdfOffer = j; const saved = randText(j.discountCents * j.months);
-    $('#proDealHead').textContent = `Your Ledgerly ticket: save ${saved} on ASC PDF Pro`; $('#proDealWas').textContent = randText(j.priceCents); $('#proDealNow').textContent = randText(j.chargeCents);
-    $('#proDealFor').textContent = `a month for ${j.months} months`; $('#proDealFine').textContent = `You get ${randText(j.discountCents)} off each month because you pay for Ledgerly. After ${j.months} months it is ${randText(j.priceCents)} a month. Cancel any time.` + (j.validUntil ? ` Use it by ${new Date(j.validUntil).toLocaleDateString('en-ZA', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Africa/Johannesburg' })}.` : '');
-    $('#proDeal').hidden = false; $('#proPrice').hidden = true; $('#proBuy').textContent = `Subscribe and save ${saved}`;
+    $('#proDealHead').textContent = `Use your Ledgerly ticket: save ${saved}`; $('#proDealWas').textContent = randText(j.priceCents); $('#proDealNow').textContent = randText(j.chargeCents);
+    $('#proDealFor').textContent = `a month for ${j.months} months`; $('#proDealFine').textContent = `It is added to your Ledgerly payment from the next one. After ${j.months} months it is ${randText(j.priceCents)} a month.` + (j.validUntil ? ` Use it by ${new Date(j.validUntil).toLocaleDateString('en-ZA', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Africa/Johannesburg' })}.` : '');
+    $('#proDeal').hidden = false; $('#proPrice').hidden = true; $('#proBuy').textContent = 'Use my ticket in Ledgerly';
   } catch { /* the normal price is shown */ }
 }
 function openPro(feature) {
@@ -1296,6 +1296,8 @@ function openPro(feature) {
 }
 let proFeature = '';
 $('#proBuy').onclick = () => {
+  // A Ledgerly ticket is used on the Ledgerly payment: open Ledgerly's plan page, signed in.
+  if (pdfOffer) { openLedgerly($('#proBuy'), $('#proBuyMsg'), 'plan'); return; }
   if (CONFIG.apiBase) {
     // Signed in: we already know the email, so go straight to PayFast. Only visitors who are not signed in are asked for one.
     const known = ((acct.user && acct.user.email) || '').trim();
