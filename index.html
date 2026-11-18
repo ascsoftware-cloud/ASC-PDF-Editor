@@ -490,7 +490,7 @@ a.btn{text-decoration:none}
       <li>Strong compression, page numbers and watermarks</li>
     </ul>
     <div id="proDeal" class="deal" hidden>
-      <span class="tag">Ledgerly subscriber offer</span>
+      <span class="tag">Ledgerly ticket</span>
       <p class="head" id="proDealHead"></p>
       <p class="big"><s id="proDealWas"></s> <strong id="proDealNow"></strong> <span id="proDealFor"></span></p>
       <p class="fine" id="proDealFine"></p>
@@ -1281,8 +1281,8 @@ async function loadPdfOffer() {
     if (j && j.eligible === false && !$('#proDlg').hidden) $('#proHint').hidden = false;
     if (!j || !j.eligible || !j.chargeCents || !j.discountCents || $('#proDlg').hidden) return;
     pdfOffer = j; const saved = randText(j.discountCents * j.months);
-    $('#proDealHead').textContent = `Save ${saved} on ASC PDF Pro`; $('#proDealWas').textContent = randText(j.priceCents); $('#proDealNow').textContent = randText(j.chargeCents);
-    $('#proDealFor').textContent = `a month for ${j.months} months`; $('#proDealFine').textContent = `You get ${randText(j.discountCents)} off each month because you pay for Ledgerly. After ${j.months} months it is ${randText(j.priceCents)} a month. Cancel any time.`;
+    $('#proDealHead').textContent = `Your Ledgerly ticket: save ${saved} on ASC PDF Pro`; $('#proDealWas').textContent = randText(j.priceCents); $('#proDealNow').textContent = randText(j.chargeCents);
+    $('#proDealFor').textContent = `a month for ${j.months} months`; $('#proDealFine').textContent = `You get ${randText(j.discountCents)} off each month because you pay for Ledgerly. After ${j.months} months it is ${randText(j.priceCents)} a month. Cancel any time.` + (j.validUntil ? ` Use it by ${new Date(j.validUntil).toLocaleDateString('en-ZA', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Africa/Johannesburg' })}.` : '');
     $('#proDeal').hidden = false; $('#proPrice').hidden = true; $('#proBuy').textContent = `Subscribe and save ${saved}`;
   } catch { /* the normal price is shown */ }
 }
