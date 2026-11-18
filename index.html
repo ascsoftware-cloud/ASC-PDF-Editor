@@ -191,6 +191,11 @@ footer a{color:inherit}
 #proDlg .msg{margin-top:14px}
 #proDlg .msg:empty{display:none}
 #proDlg .keyrow{margin-top:22px;padding-top:18px}
+#ssoDlg .panel{padding:26px}
+#ssoDlg .lede{margin:0 0 20px !important;line-height:1.55;overflow-wrap:anywhere}
+#ssoDlg .row{flex-direction:column;align-items:stretch;gap:12px;margin-top:0}
+#ssoDlg .row .btn{width:100%;min-height:48px;justify-content:center;text-align:center;overflow-wrap:anywhere;height:auto;padding:10px 16px}
+#ssoDlg .msg:empty{display:none}
 .oauth{display:grid;gap:10px;margin:14px 0 4px}
 .oauth .btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%}
 .oauth svg{width:18px;height:18px;flex:none}
@@ -515,7 +520,7 @@ a.btn{text-decoration:none}
   <div class="panel">
     <h2 id="ssoH">Which account do you want to use?</h2>
     <p id="ssoLede" class="lede" style="margin:0 0 8px"></p>
-    <div class="row"><button type="button" class="btn" id="ssoKeep"></button><button type="button" class="btn primary" id="ssoSwitch"></button></div>
+    <div class="row"><button type="button" class="btn primary" id="ssoKeep"></button><button type="button" class="btn" id="ssoSwitch"></button></div>
     <p id="ssoMsg" class="msg" role="status"></p>
   </div>
 </div>
