@@ -453,7 +453,8 @@ a.btn{text-decoration:none}
       <li>Batch work: split into many files and convert several files at once</li>
       <li>Strong compression, page numbers and watermarks</li>
     </ul>
-    <p id="proPrice" style="font-weight:700;margin:0 0 22px" hidden></p>
+    <p id="proPrice" style="font-weight:700;margin:0 0 8px" hidden></p>
+    <p id="proOffer" class="msg" style="margin:0 0 22px" hidden></p>
     <div class="row">
       <button type="button" class="btn" id="proClose">Not Now</button>
       <button type="button" class="btn primary" id="proBuy">Get Pro</button>
@@ -484,6 +485,11 @@ a.btn{text-decoration:none}
       <button type="submit" class="btn">Activate</button>
     </form>
     <p id="keyMsg" class="msg" role="status"></p>
+    <div id="proLedgerly" class="early" hidden>
+      <p style="margin:0;font-weight:700">Add Ledgerly too, with your first week free</p>
+      <p class="msg">Ledgerly is ASC’s invoicing and business app, and it uses this same account. Because you have ASC PDF Pro, the first week of a paid Ledgerly plan is free: you pay for the other three weeks of that month, then the full price.</p>
+      <div class="row"><button type="button" class="btn primary" id="proLedgerlyBtn">See Ledgerly plans</button></div>
+    </div>
   </div>
 </div>
 
@@ -1184,13 +1190,27 @@ const WHY = {
   splitbatch: 'Splitting into many files at once', batch: `Converting more than ${FREE.batch} files at once`, office: 'Converting to Excel and PowerPoint, and Office files to PDF', ocr: 'OCR for scanned PDFs'
 };
 function gate(feature) { if (pro.active) return true; openPro(feature); return false; }
+let pdfOffer = null;
+async function sessionJwt() { const { data } = sb ? await sb.auth.getSession() : { data: null }; return (data && data.session && data.session.access_token) || ''; }
+const randText = c => 'R' + (c % 100 ? (c / 100).toFixed(2).replace('.', ',') : String(c / 100));
+async function loadPdfOffer() {
+  pdfOffer = null; $('#proOffer').hidden = true; if (!CONFIG.apiBase || !acct.user) return;
+  try {
+    const jwt = await sessionJwt(); if (!jwt) return;
+    const r = await fetch(CONFIG.apiBase + '/offer', { method: 'POST', headers: { authorization: 'Bearer ' + jwt } }), j = await r.json();
+    if (!j || !j.eligible || !j.chargeCents || !j.discountCents || $('#proDlg').hidden) return;
+    pdfOffer = j;
+    $('#proPrice').textContent = `${randText(j.chargeCents)} per month for your first ${j.months} months, then ${randText(j.priceCents)}. Cancel any time.`; $('#proPrice').hidden = false;
+    $('#proOffer').textContent = `Because you pay for Ledgerly, you save ${randText(j.discountCents)} a month for ${j.months} months (${randText(j.discountCents * j.months)} in all).`; $('#proOffer').hidden = false;
+  } catch { /* the normal price is shown */ }
+}
 function openPro(feature) {
   $('#proWhy').textContent = WHY[feature] ? `Pro feature: ${WHY[feature]}.` : 'Pro unlocks the extra tools below.';
   $('#proPrice').textContent = CONFIG.price; $('#proPrice').hidden = !CONFIG.price;
   const buy = $('#proBuy'); buy.textContent = CONFIG.apiBase ? 'Subscribe now' : CONFIG.checkoutUrl ? 'Get Pro' : 'Request Early Access'; proFeature = feature || '';
   $('#buyForm').hidden = true; $('#buyMsg').textContent = ''; $('#buySend').disabled = false; $('#proBuyMsg').textContent = ''; buy.disabled = false;
   $('#earlyForm').hidden = true; $('#earlyMsg').textContent = ''; $('#earlySend').disabled = false; $('#earlyAddr').textContent = CONFIG.contactEmail;
-  $('#keyMsg').textContent = ''; openModal($('#proDlg'), buy);
+  $('#keyMsg').textContent = ''; $('#proLedgerly').hidden = true; $('#proOffer').hidden = true; pdfOffer = null; openModal($('#proDlg'), buy); loadPdfOffer();
 }
 let proFeature = '';
 $('#proBuy').onclick = () => {
@@ -1219,8 +1239,8 @@ $('#earlyForm').addEventListener('submit', async e => {
 });
 /* ---------- PayFast checkout, return and licence checks ---------- */
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
-async function api(path, body) {
-  const r = await fetch(CONFIG.apiBase + path, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
+async function api(path, body, headers) {
+  const r = await fetch(CONFIG.apiBase + path, { method: 'POST', headers: { 'content-type': 'application/json', ...(headers || {}) }, body: JSON.stringify(body) });
   let j = null; try { j = await r.json(); } catch {}
   return { ok: r.ok, j: j || {} };
 }
@@ -1229,7 +1249,8 @@ function activateLicence(key, exp) { pro.active = true; pro.key = key; storedKey
 async function startPayfast(email, say, done) {
   say('Opening PayFast…');
   try {
-    const { ok, j } = await api('/checkout', { email });
+    const jwt = pdfOffer ? await sessionJwt() : '';
+    const { ok, j } = await api('/checkout', jwt ? { email, bundle: true } : { email }, jwt ? { authorization: 'Bearer ' + jwt } : undefined);
     if (!ok || !j.action || !Array.isArray(j.fields)) { say(j.message || 'Couldn’t start the payment. Please try again.'); done(); return; }
     const f = document.createElement('form'); f.method = 'POST'; f.action = j.action;
     for (const [name, value] of j.fields) { const i = document.createElement('input'); i.type = 'hidden'; i.name = name; i.value = value; f.appendChild(i); }
@@ -1264,6 +1285,7 @@ async function handlePaymentReturn() {
         activateLicence(j.key, j.expires);
         openPro(); $('#buyForm').hidden = true; $('#keyIn').value = j.key;
         $('#keyMsg').textContent = 'Pro is active. Thank you! Your licence key is above, and we’ve emailed it to you. Keep it safe.';
+        $('#proLedgerly').hidden = false;
         return;
       }
     } catch {}
@@ -1948,20 +1970,21 @@ async function handleSsoArrival() {
 }
 // "Ledgerly" buttons (header and My Files): signed in, Ledgerly opens already signed in as the same account (it asks first if a
 // different one is open there); signed out, it simply opens. Always a new tab, so unsaved work here is not lost.
-async function openLedgerly(btn, msg) {
+async function openLedgerly(btn, msg, next) {
   const w = window.open('', '_blank'), go = url => { if (w) w.location.href = url; else location.href = url; };
   if (btn) btn.disabled = true; if (msg) msg.textContent = 'Opening Ledgerly…';
   try {
     const { data } = sb ? await sb.auth.getSession() : { data: null }, jwt = data && data.session && data.session.access_token;
-    if (!jwt) { go(CONFIG.ledgerlyOrigin + '/'); if (msg) msg.textContent = ''; return; }
-    const r = await fetch(CONFIG.ssoBase + '/handoff', { method: 'POST', headers: { 'content-type': 'application/json', authorization: 'Bearer ' + jwt }, body: '{}' }), j = await r.json();
+    if (!jwt) { go(CONFIG.ledgerlyOrigin + (next === 'plan' ? '/go/plan' : '/')); if (msg) msg.textContent = ''; return; }
+    const r = await fetch(CONFIG.ssoBase + '/handoff', { method: 'POST', headers: { 'content-type': 'application/json', authorization: 'Bearer ' + jwt }, body: JSON.stringify(next ? { next } : {}) }), j = await r.json();
     if (!r.ok || !j.url) throw new Error(j.message || 'failed');
     go(j.url); if (msg) msg.textContent = '';
-  } catch (err) { console.error(err); go(CONFIG.ledgerlyOrigin + '/'); if (msg) msg.textContent = 'Opened Ledgerly. You may need to sign in there with the same email.'; }
+  } catch (err) { console.error(err); go(CONFIG.ledgerlyOrigin + (next === 'plan' ? '/go/plan' : '/')); if (msg) msg.textContent = 'Opened Ledgerly. You may need to sign in there with the same email.'; }
   finally { if (btn) btn.disabled = false; }
 }
 $('#filesLedgerly').onclick = () => openLedgerly($('#filesLedgerly'), $('#filesMsg'));
 $('#ledgerlyBtn').onclick = () => openLedgerly($('#ledgerlyBtn'), null);
+$('#proLedgerlyBtn').onclick = () => openLedgerly($('#proLedgerlyBtn'), $('#keyMsg'), 'plan');
 
 async function loadFiles() {
   const { data, error } = await sb.from('pdf_user_files').select('id,name,size,mime,path,created_at').order('created_at', { ascending: false });
