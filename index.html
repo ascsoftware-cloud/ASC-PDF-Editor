@@ -163,7 +163,7 @@ footer a{color:inherit}
 .row{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 
-.hdr-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+.hdr-actions{display:flex;align-items:center;gap:10px;flex-wrap:nowrap;justify-content:flex-end;white-space:nowrap}
 .pill{display:inline-block;background:var(--pill-bg);color:var(--pill-ink);border:1px solid var(--pill-line);border-radius:999px;padding:0 8px;font-size:11px;font-weight:800;letter-spacing:.04em;line-height:18px;text-transform:uppercase;vertical-align:middle}
 .is-pro .pill:not(#proBadge){display:none}
 .hint{background:var(--accent-soft);border:1px solid var(--accent-line);color:var(--accent-fg);border-radius:10px;padding:9px 12px;margin:0 0 12px;font-size:14px}
@@ -190,8 +190,19 @@ footer a{color:inherit}
 #proDlg .row{margin-top:6px}
 #proDlg .msg{margin-top:14px}
 #proDlg .msg:empty{display:none}
-#proDlg .keyrow{margin-top:22px;padding-top:18px}
 #ssoDlg .panel{padding:26px}
+.deal{border:1px solid var(--accent-line);background:var(--accent-soft);border-radius:14px;padding:14px 16px;margin:0 0 14px;text-align:left}
+.deal .tag{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--accent-ink);background:var(--accent);border-radius:999px;padding:3px 10px;margin:0 0 8px}
+.deal .head{margin:0 0 4px;font-size:1.15rem;font-weight:800;line-height:1.25;color:var(--ink)}
+.deal .big{margin:2px 0 4px;display:flex;align-items:baseline;flex-wrap:wrap;gap:6px 10px}
+.deal .big s{color:var(--muted);font-size:1rem}
+.deal .big strong{font-size:1.75rem;line-height:1.1;color:var(--ink)}
+.deal .big span{color:var(--ink);font-size:.95rem}
+.deal .fine{margin:0;font-size:13px;color:var(--muted);line-height:1.45}
+.deal .go{margin-top:12px;width:100%}
+.promo{display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;padding:10px 16px;background:var(--accent);color:var(--accent-ink);font-weight:700;font-size:14px;text-align:center}
+.promo .btn{min-height:36px;padding:0 14px;background:var(--accent-ink);border-color:var(--accent-ink);color:var(--accent)}
+.promo .x{appearance:none;background:none;border:0;color:inherit;font-size:20px;line-height:1;cursor:pointer;padding:4px 8px;opacity:.8}
 #ssoDlg .lede{margin:0 0 20px !important;line-height:1.55;overflow-wrap:anywhere}
 #ssoDlg .row{flex-direction:column;align-items:stretch;gap:12px;margin-top:0}
 #ssoDlg .row .btn{width:100%;min-height:48px;justify-content:center;text-align:center;overflow-wrap:anywhere;height:auto;padding:10px 16px}
@@ -215,7 +226,10 @@ footer a{color:inherit}
 .splitopt input{width:100%}
 a.btn{text-decoration:none}
 .brand>span{white-space:nowrap}
-@media (max-width:560px){.privacy{display:none}}
+@media (max-width:1000px){.privacy{display:none}}
+@media (max-width:640px){.hdr-actions{gap:6px}.hdr-actions .btn{padding:0 11px;font-size:13px;min-height:40px}}
+@media (max-width:460px){.hdr-actions .btn{padding:0 9px;font-size:12.5px}.hdr-actions #themeSw{display:none}}
+@media (max-width:420px){.hdr-actions{gap:4px}.hdr-actions .btn{padding:0 7px;font-size:12px}}
 @media (prefers-reduced-motion:reduce){*{transition-duration:.01ms!important;animation-duration:.01ms!important;scroll-behavior:auto!important}}
 
 /* ribbon */
@@ -301,6 +315,7 @@ a.btn{text-decoration:none}
 </svg>
 <a class="skip" href="#tool">Skip to the PDF tool</a>
 <noscript><p style="margin:0;padding:10px 16px;background:#fff3cd;color:#4a3b00;text-align:center">This PDF editor needs JavaScript. Turn it on in your browser to edit, merge, split, sign and convert PDFs.</p></noscript>
+<div id="promoBar" class="promo" hidden><span>Your first week of Ledgerly is free.</span><button type="button" class="btn" id="promoGo">Start my free week</button><button type="button" class="x" id="promoX" aria-label="Dismiss">&times;</button></div>
 <header class="top">
   <div class="brand"><svg class="mark" viewBox="0 0 64 64" role="img" aria-label="ASC Software logo"><use href="#asc-badge"/></svg><span><span translate="no">ASC Software</span><small>PDF Tools</small></span></div>
   <div class="hdr-actions"><span class="privacy">Core tools run on your device</span><span id="proBadge" class="pill" hidden>Pro</span><button type="button" class="sw" id="themeSw" role="switch" aria-checked="false" aria-label="Light mode"><span class="i l"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg></span><span class="i r"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></span><span class="k"><span class="kd"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg></span><span class="kl"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></span></span></button><button type="button" class="btn" id="ledgerlyBtn">Ledgerly</button><button type="button" class="btn primary" id="goPro">Get Pro</button><button type="button" class="btn" id="acctBtn" hidden>Sign in</button></div>
@@ -458,21 +473,31 @@ a.btn{text-decoration:none}
       <li>Batch work: split into many files and convert several files at once</li>
       <li>Strong compression, page numbers and watermarks</li>
     </ul>
-    <p id="proPrice" style="font-weight:700;margin:0 0 8px" hidden></p>
-    <p id="proOffer" class="msg" style="margin:0 0 22px" hidden></p>
+    <div id="proDeal" class="deal" hidden>
+      <span class="tag">Ledgerly subscriber offer</span>
+      <p class="head" id="proDealHead"></p>
+      <p class="big"><s id="proDealWas"></s> <strong id="proDealNow"></strong> <span id="proDealFor"></span></p>
+      <p class="fine" id="proDealFine"></p>
+    </div>
+    <p id="proPrice" style="font-weight:700;margin:0 0 14px" hidden></p>
+    <div id="proFree" class="deal">
+      <span class="tag">Free week</span>
+      <p class="head">Subscribe to PDF Pro and your first week of Ledgerly is free</p>
+      <p class="fine">Start a Ledgerly Pro or Max plan afterwards: you pay for only three weeks of the first month, then the normal price. Cancel any time.</p>
+    </div>
     <div class="row">
       <button type="button" class="btn" id="proClose">Not Now</button>
       <button type="button" class="btn primary" id="proBuy">Get Pro</button>
     </div>
     <p id="proBuyMsg" class="msg" role="status"></p>
     <form id="buyForm" class="early" hidden novalidate>
-      <p style="margin:0;font-weight:700">Your email, for your licence key and receipt</p>
+      <p style="margin:0;font-weight:700">Your email, for your receipt</p>
       <div class="stack">
         <label class="field">Email<input type="email" id="buyEmail" name="email" autocomplete="email" spellcheck="false" placeholder="you@example.com"></label>
       </div>
       <div class="row"><button type="submit" class="btn primary" id="buySend">Subscribe now</button></div>
       <p id="buyMsg" class="msg" role="status"></p>
-      <p class="msg">You pay on PayFast’s own secure page. We never see your card details. <button type="button" class="linkbtn" id="buyRestore">Already subscribed? Email my key</button></p>
+      <p class="msg">You pay on PayFast’s own secure page. We never see your card details. Sign in with this email on any device and Pro switches on.</p>
     </form>
     <form id="earlyForm" class="early" hidden novalidate>
       <p style="margin:0;font-weight:700">Request early access</p>
@@ -485,15 +510,12 @@ a.btn{text-decoration:none}
       <p id="earlyMsg" class="msg" role="status"></p>
       <p class="msg">Prefer email? Write to <strong id="earlyAddr"></strong> <button type="button" class="linkbtn" id="earlyCopy">Copy address</button></p>
     </form>
-    <form id="keyForm" class="keyrow">
-      <label class="field">Already have a licence key?<input type="text" id="keyIn" name="licenceKey" autocomplete="off" spellcheck="false" placeholder="Paste your key…"></label>
-      <button type="submit" class="btn">Activate</button>
-    </form>
-    <p id="keyMsg" class="msg" role="status"></p>
-    <div id="proLedgerly" class="early" hidden>
-      <p style="margin:0;font-weight:700">Add Ledgerly too, with your first week free</p>
-      <p class="msg">Ledgerly is ASC’s invoicing and business app, and it uses this same account. Because you have ASC PDF Pro, the first week of a paid Ledgerly plan is free: you pay for the other three weeks of that month, then the full price.</p>
-      <div class="row"><button type="button" class="btn primary" id="proLedgerlyBtn">See Ledgerly plans</button></div>
+    <p id="proStatus" class="msg" role="status"></p>
+    <div id="proLedgerly" class="deal" hidden>
+      <span class="tag">Free week</span>
+      <p class="head">Your first week of Ledgerly is free</p>
+      <p class="fine">Ledgerly is ASC’s invoicing and business app, on this same account. You pay for only three weeks of the first month, then the normal price. Cancel any time.</p>
+      <button type="button" class="btn primary go" id="proLedgerlyBtn">Start my free week</button>
     </div>
   </div>
 </div>
@@ -611,7 +633,7 @@ const CONFIG = {
   devExpose: false       // leave false in production
 };
 const FREE = { pages: 100, bytes: 25 * 1024 * 1024, batch: 5 };
-const pro = { active: false, key: '' };
+const pro = { active: false, key: '', reason: '' };
 // NOTE: this flag lives in the browser, so it only gates the on-device tools. The server features
 // (Office conversion, OCR) must verify the key on your server before doing any work.
 let storedKey = '';
@@ -1199,14 +1221,15 @@ let pdfOffer = null;
 async function sessionJwt() { const { data } = sb ? await sb.auth.getSession() : { data: null }; return (data && data.session && data.session.access_token) || ''; }
 const randText = c => 'R' + (c % 100 ? (c / 100).toFixed(2).replace('.', ',') : String(c / 100));
 async function loadPdfOffer() {
-  pdfOffer = null; $('#proOffer').hidden = true; if (!CONFIG.apiBase || !acct.user) return;
+  pdfOffer = null; $('#proDeal').hidden = true; if (!CONFIG.apiBase || !acct.user) return;
   try {
     const jwt = await sessionJwt(); if (!jwt) return;
     const r = await fetch(CONFIG.apiBase + '/offer', { method: 'POST', headers: { authorization: 'Bearer ' + jwt } }), j = await r.json();
     if (!j || !j.eligible || !j.chargeCents || !j.discountCents || $('#proDlg').hidden) return;
-    pdfOffer = j;
-    $('#proPrice').textContent = `${randText(j.chargeCents)} per month for your first ${j.months} months, then ${randText(j.priceCents)}. Cancel any time.`; $('#proPrice').hidden = false;
-    $('#proOffer').textContent = `Because you pay for Ledgerly, you save ${randText(j.discountCents)} a month for ${j.months} months (${randText(j.discountCents * j.months)} in all).`; $('#proOffer').hidden = false;
+    pdfOffer = j; const saved = randText(j.discountCents * j.months);
+    $('#proDealHead').textContent = `Save ${saved} on ASC PDF Pro`; $('#proDealWas').textContent = randText(j.priceCents); $('#proDealNow').textContent = randText(j.chargeCents);
+    $('#proDealFor').textContent = `a month for your first ${j.months} months`; $('#proDealFine').textContent = `${randText(j.discountCents)} off every month because you pay for Ledgerly. Then ${randText(j.priceCents)} a month. Cancel any time.`;
+    $('#proDeal').hidden = false; $('#proPrice').hidden = true; $('#proBuy').textContent = `Subscribe and save ${saved}`;
   } catch { /* the normal price is shown */ }
 }
 function openPro(feature) {
@@ -1215,7 +1238,7 @@ function openPro(feature) {
   const buy = $('#proBuy'); buy.textContent = CONFIG.apiBase ? 'Subscribe now' : CONFIG.checkoutUrl ? 'Get Pro' : 'Request Early Access'; proFeature = feature || '';
   $('#buyForm').hidden = true; $('#buyMsg').textContent = ''; $('#buySend').disabled = false; $('#proBuyMsg').textContent = ''; buy.disabled = false;
   $('#earlyForm').hidden = true; $('#earlyMsg').textContent = ''; $('#earlySend').disabled = false; $('#earlyAddr').textContent = CONFIG.contactEmail;
-  $('#keyMsg').textContent = ''; $('#proLedgerly').hidden = true; $('#proOffer').hidden = true; pdfOffer = null; openModal($('#proDlg'), buy); loadPdfOffer();
+  $('#proStatus').textContent = ''; $('#proLedgerly').hidden = true; $('#proDeal').hidden = true; pdfOffer = null; openModal($('#proDlg'), buy); loadPdfOffer();
 }
 let proFeature = '';
 $('#proBuy').onclick = () => {
@@ -1268,13 +1291,6 @@ $('#buyForm').addEventListener('submit', async e => {
   $('#buySend').disabled = true;
   startPayfast(email, t => { msg.textContent = t; }, () => { $('#buySend').disabled = false; });
 });
-$('#buyRestore').onclick = async () => {
-  const msg = $('#buyMsg'), em = $('#buyEmail'), email = em.value.trim();
-  if (!EMAIL_RE.test(email)) { msg.textContent = 'Enter the email you subscribed with, then press this again.'; em.focus(); return; }
-  msg.textContent = 'Sending…';
-  try { const { ok, j } = await api('/restore', { email }); msg.textContent = ok ? 'If that address has a licence, we’ve emailed the key to it. Check your inbox.' : (j.message || 'That didn’t send. Please try again.'); }
-  catch { msg.textContent = 'Couldn’t reach the server. Please try again in a moment.'; }
-};
 // After PayFast sends the buyer back: wait for PayFast to confirm the payment, then switch Pro on.
 async function handlePaymentReturn() {
   const q = new URLSearchParams(location.search), state = q.get('pro'), id = q.get('c');
@@ -1288,15 +1304,15 @@ async function handlePaymentReturn() {
       const r = await fetch(CONFIG.apiBase + '/licence?checkout=' + encodeURIComponent(id)), j = await r.json();
       if (j && j.ready && j.key) {
         activateLicence(j.key, j.expires);
-        openPro(); $('#buyForm').hidden = true; $('#keyIn').value = j.key;
-        $('#keyMsg').textContent = 'Pro is active. Thank you! Your licence key is above, and we’ve emailed it to you. Keep it safe.';
+        openPro(); $('#buyForm').hidden = true;
+        $('#proStatus').textContent = 'Pro is active. Thank you! To use it on another device, sign in there with the email you paid with.';
         $('#proLedgerly').hidden = false;
         return;
       }
     } catch {}
     await new Promise(res => setTimeout(res, 2000));
   }
-  toast('Your payment is still being confirmed. Your licence key will be emailed to you shortly.');
+  toast('Your payment is still being confirmed. Pro switches on when you sign in with the email you paid with.');
 }
 // A stored key is re-checked on each visit, so a renewal extends it and a cancelled or unpaid one stops.
 async function refreshLicence() {
@@ -1307,20 +1323,14 @@ async function refreshLicence() {
     else if (r.status !== 429 && j && j.valid === false) { pro.active = false; pro.key = ''; try { localStorage.removeItem('asc_pdf_licence'); } catch {} storedKey = ''; syncPro(); }
   } catch { /* offline or server busy: keep what we have */ }
 }
-function syncPro() { document.body.classList.toggle('is-pro', pro.active); $('#proBadge').hidden = !pro.active; $('#goPro').hidden = pro.active; }
+function syncPromo() {
+  let off = false; try { off = localStorage.getItem('asc_promo_off') === '1'; } catch {}
+  $('#promoBar').hidden = off || !pro.active || pro.reason === 'asc' || pro.key === 'dev';
+}
+$('#promoX').onclick = () => { try { localStorage.setItem('asc_promo_off', '1'); } catch {} syncPromo(); };
+$('#promoGo').onclick = () => openLedgerly($('#promoGo'), null, 'plan');
+function syncPro() { syncPromo(); document.body.classList.toggle('is-pro', pro.active); $('#proBadge').hidden = !pro.active; $('#goPro').hidden = pro.active; }
 $('#goPro').onclick = () => openPro(); $('#proClose').onclick = () => closeModal($('#proDlg'));
-$('#keyForm').addEventListener('submit', async e => {
-  e.preventDefault(); const key = $('#keyIn').value.trim(), msg = $('#keyMsg'); if (!key) return;
-  if (!CONFIG.licenseEndpoint) { msg.textContent = 'Licence keys can’t be checked yet. Request early access and we’ll send yours.'; return; }
-  msg.textContent = 'Checking…';
-  try {
-    const r = await fetch(CONFIG.licenseEndpoint, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ key }) }), j = await r.json();
-    if (j && j.valid) {
-      activateLicence(key.toUpperCase(), j.expires);
-      msg.textContent = 'Pro is active. Thank you!'; setTimeout(() => closeModal($('#proDlg')), 900);
-    } else msg.textContent = 'That key wasn’t recognised. Check it and try again.';
-  } catch { msg.textContent = 'Couldn’t reach the licence server. Try again in a moment.'; }
-});
 let lastMode = 'keep';
 $('#mode').addEventListener('change', e => { if (e.target.value === 'low' && !gate('strong')) { e.target.value = lastMode; return; } lastMode = e.target.value; });
 $('#optNums').addEventListener('click', e => { if (!pro.active) { e.preventDefault(); gate('pagenums'); } });
@@ -1939,10 +1949,10 @@ async function accountPro(jwt) {
   if (!CONFIG.apiBase || pro.active) return;
   try {
     const r = await fetch(CONFIG.apiBase + '/account', { method: 'POST', headers: { authorization: 'Bearer ' + jwt } }), j = await r.json();
-    if (j && j.pro) { pro.active = true; pro.key = 'account'; syncPro(); } else dropAccountPro();
+    if (j && j.pro) { pro.active = true; pro.key = 'account'; pro.reason = j.reason || ''; syncPro(); } else dropAccountPro();
   } catch { /* offline or busy: leave things as they are */ }
 }
-function dropAccountPro() { if (pro.key === 'account') { pro.active = false; pro.key = ''; syncPro(); } }
+function dropAccountPro() { if (pro.key === 'account') { pro.active = false; pro.key = ''; pro.reason = ''; syncPro(); } }
 
 /* ---------- moving between Ledgerly and this editor ---------- */
 // Arriving from Ledgerly with a one-time token after the #: sign in here as the same account, or ask which account to use.
@@ -1989,7 +1999,7 @@ async function openLedgerly(btn, msg, next) {
 }
 $('#filesLedgerly').onclick = () => openLedgerly($('#filesLedgerly'), $('#filesMsg'));
 $('#ledgerlyBtn').onclick = () => openLedgerly($('#ledgerlyBtn'), null);
-$('#proLedgerlyBtn').onclick = () => openLedgerly($('#proLedgerlyBtn'), $('#keyMsg'), 'plan');
+$('#proLedgerlyBtn').onclick = () => openLedgerly($('#proLedgerlyBtn'), $('#proStatus'), 'plan');
 
 async function loadFiles() {
   const { data, error } = await sb.from('pdf_user_files').select('id,name,size,mime,path,created_at').order('created_at', { ascending: false });
