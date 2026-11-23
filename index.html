@@ -26,7 +26,7 @@
 {"@type":"WebApplication","@id":"https://pdfedit.ascsoftware.co.za/#app","name":"ASC PDF Editor and Converter","url":"https://pdfedit.ascsoftware.co.za/","description":"Free online PDF editor. Edit, merge, split, rotate, sign, compress and convert PDFs in your browser.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","inLanguage":"en","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"ZAR"},"featureList":["Edit PDF: add text, highlights, whiteout and images","Merge PDF files","Split PDF and extract pages","Rotate and reorder pages","Sign PDF","Compress PDF","PDF to Word","PDF to JPG and PNG","JPG to PDF"],"publisher":{"@id":"https://ascsoftware.co.za/#org"}}
 ]}
 </script>
-<meta name="theme-color" content="#f5f8f6">
+<meta name="theme-color" content="#f7f8fa">
 <link rel="icon" href="/favicon.ico" sizes="48x48">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
@@ -35,29 +35,29 @@
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="preload" href="fonts/geist-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
 <script>(function(){var t;try{t=localStorage.getItem('asc_pdf_theme')}catch(e){}if(t!=='light'&&t!=='dark')t=matchMedia('(prefers-color-scheme: light)').matches?'light':'dark';document.documentElement.setAttribute('data-theme',t)})()</script>
-<meta name="theme-color" content="#0b1120">
+<meta name="theme-color" content="#121212">
 <style>
 @font-face{font-family:Geist;src:url(fonts/geist-latin-wght-normal.woff2) format("woff2");font-weight:100 900;font-style:normal;font-display:swap}
 :root,[data-theme=dark]{
-  --ink:#e8edf5; --muted:#9ba8bd; --bg:#0b1120; --surface:#141d2f; --line:#263249;
+  --ink:#ececec; --muted:#a1a1a6; --bg:#121212; --surface:#1c1c1e; --line:#333336;
   --accent:#34d399; --accent-ink:#04271c; --accent-fg:#34d399; --accent-hover:#2cc48e;
   --accent-soft:rgba(52,211,153,.12); --accent-soft2:rgba(52,211,153,.22); --accent-line:rgba(52,211,153,.4);
   --danger:#f87171; --danger-soft:rgba(248,113,113,.12); --danger-line:rgba(248,113,113,.4); --danger-ink:#fecaca;
-  --raise:#0f1729; --thumb:#0f1729; --chk-bg:rgba(20,29,47,.92); --editor-bg:#070c18; --dash:#3a4a68;
+  --raise:#161617; --thumb:#161617; --chk-bg:rgba(28,28,30,.92); --editor-bg:#0c0c0d; --dash:#48484c;
   --pill-bg:rgba(251,191,36,.14); --pill-ink:#fbbf24; --pill-line:rgba(251,191,36,.32);
-  --hdr:rgba(11,17,32,.9); --toast-bg:#1d2940; --tile-hover:#182338;
+  --hdr:rgba(18,18,18,.9); --toast-bg:#2a2a2d; --tile-hover:#242426;
   --radius:12px; --shadow:0 1px 2px rgba(0,0,0,.4),0 4px 12px rgba(0,0,0,.45); --shadow-bar:0 6px 16px rgba(0,0,0,.35);
   --ease:cubic-bezier(.2,.8,.2,1);
   color-scheme:dark;
 }
 [data-theme=light]{
-  --ink:#0f172a; --muted:#4b5a72; --bg:#f4f7fb; --surface:#fff; --line:#dbe2ec;
-  --accent:#34d399; --accent-ink:#04271c; --accent-fg:#047857; --accent-hover:#2cc48e;
+  --ink:#0f172a; --muted:#566176; --bg:#f7f8fa; --surface:#fff; --line:#e2e6ec;
+  --accent:#047857; --accent-ink:#fff; --accent-fg:#047857; --accent-hover:#036649;
   --accent-soft:rgba(16,185,129,.1); --accent-soft2:rgba(16,185,129,.2); --accent-line:rgba(4,120,87,.4);
   --danger:#b3261e; --danger-soft:#fbeceb; --danger-line:#e6b4b0; --danger-ink:#6b1a15;
-  --raise:#eef3f8; --thumb:#e6ecf3; --chk-bg:rgba(255,255,255,.92); --editor-bg:#e2e8f0; --dash:#b3c0d3;
+  --raise:#f1f3f6; --thumb:#eceff3; --chk-bg:rgba(255,255,255,.92); --editor-bg:#e6e9ee; --dash:#c3cad5;
   --pill-bg:rgba(245,158,11,.14); --pill-ink:#92400e; --pill-line:rgba(180,83,9,.3);
-  --hdr:rgba(244,247,251,.9); --toast-bg:#0f172a; --tile-hover:#f0fbf6;
+  --hdr:rgba(247,248,250,.9); --toast-bg:#0f172a; --tile-hover:#f0fbf6;
   --shadow:0 1px 2px rgba(15,23,42,.08),0 4px 14px rgba(15,23,42,.08); --shadow-bar:0 6px 16px rgba(15,23,42,.08);
   color-scheme:light;
 }
@@ -626,7 +626,7 @@ a.btn{text-decoration:none}
 
 <script>
 (function(){var h=document.documentElement,b=document.getElementById('themeSw');if(!b)return;
-function sync(){var l=h.getAttribute('data-theme')==='light';b.setAttribute('aria-checked',l?'true':'false');var m=document.querySelector('meta[name=theme-color]');if(m)m.setAttribute('content',l?'#f4f7fb':'#0b1120')}
+function sync(){var l=h.getAttribute('data-theme')==='light';b.setAttribute('aria-checked',l?'true':'false');var m=document.querySelector('meta[name=theme-color]');if(m)m.setAttribute('content',l?'#f7f8fa':'#121212')}
 b.addEventListener('click',function(){var t=h.getAttribute('data-theme')==='light'?'dark':'light';h.setAttribute('data-theme',t);try{localStorage.setItem('asc_pdf_theme',t)}catch(e){}sync()});sync()})();
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.0/dist/umd/supabase.js" crossorigin="anonymous"></script>
