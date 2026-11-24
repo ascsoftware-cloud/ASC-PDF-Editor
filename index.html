@@ -422,12 +422,12 @@ a.btn{text-decoration:none}
   <section class="faq" aria-labelledby="faqh">
     <h2 id="faqh">Frequently Asked Questions</h2>
     <details><summary>Are my files uploaded anywhere?</summary><p>Not unless you choose to. PDFs are opened, edited, merged, split and converted to Word, images or text inside your browser, so nothing is sent to a server. If you sign in and keep “Save files I upload to my account” on, your uploads are stored in private storage that only your account can open. OCR, Excel, PowerPoint and Office conversions also run in your browser; they download a helper the first time, and your files are not uploaded.</p></details>
-    <details><summary>Is this PDF editor really free?</summary><p>Yes. Editing, merging, splitting, rotating, signing (draw, type or upload), basic compression, JPG and PNG conversion, PDF to Word and the image, QR code, audio and video tools are free, with no watermark and no account. Pro adds larger files, OCR, Excel and PowerPoint conversion, batch work, strong compression, page numbers and watermarks.</p></details>
+    <details><summary>Is this PDF editor really free?</summary><p>Yes. Editing, merging, splitting, rotating, signing (draw, type or upload), basic compression, JPG and PNG conversion, PDF to Word and the image, QR code, audio and video tools are free, with no watermark and no account. Pro adds larger files, OCR, Excel and PowerPoint conversion, batch work, strong compression, page numbers, watermarks and power tools such as redaction and shrinking a file to a chosen size.</p></details>
     <details><summary>Can I edit a PDF without Adobe Acrobat?</summary><p>Yes. Open your PDF here in any modern browser, add text, highlights, whiteout, images or a signature, then download the result. Nothing needs to be installed.</p></details>
     <details><summary>Does it work on my phone?</summary><p>Yes. The editor works in the browser on phones and tablets as well as on computers.</p></details>
     <details><summary>Do I need an account?</summary><p>No. Every free tool works without one. A free account saves up to 20 of the files you upload, up to 25&nbsp;MB each, so you can add them again from My Files on any device. You can delete saved files at any time.</p></details>
     <details><summary>How good is PDF to Word?</summary><p>It keeps the text, reading order, heading sizes, indents and page breaks, and the result opens and edits in Word. Images, tables and exact layout are not recreated, and scanned PDFs need OCR (Pro) first.</p></details>
-    <details><summary>What does Pro include?</summary><p>PDF to Word is free. Pro adds documents over 100 pages and files over 25&nbsp;MB, conversion from PDF to Excel and PowerPoint and from Word, Excel and PowerPoint files to PDF, OCR for scanned PDFs, batch splitting and converting, strong compression, page numbers and watermarks.</p></details>
+    <details><summary>What does Pro include?</summary><p>PDF to Word is free. Pro adds documents over 100 pages and files over 25&nbsp;MB, conversion from PDF to Excel and PowerPoint and from Word, Excel and PowerPoint files to PDF, OCR for scanned PDFs, batch splitting and converting, strong compression, page numbers and watermarks. It also unlocks the power tools: permanent redaction, headers and footers, stamps, booklet printing, auto-crop, scan clean-up, shrinking a PDF or photo to a chosen size, and watermarking photos.</p></details>
     <details><summary>How do I merge PDFs?</summary><p>Add several PDFs, drag the pages into the order you want, then choose Download PDF.</p></details>
     <details><summary>How do I split a PDF or extract pages?</summary><p>Tick the pages you want, then choose Download Selected. To remove pages, select them and choose Delete.</p></details>
     <details><summary>How do I sign a PDF?</summary><p>Open a page with the pencil button, choose Signature, draw it, then drag it into place and resize it.</p></details>
@@ -504,6 +504,7 @@ a.btn{text-decoration:none}
       <li>OCR for scanned PDFs</li>
       <li>Batch work: split into many files and convert several files at once</li>
       <li>Strong compression, page numbers and watermarks</li>
+      <li>Power tools: redact text for good, headers and footers, stamps, booklet printing, auto-crop, clean up scans, and shrink a PDF or photo to a size you choose</li>
     </ul>
     <div id="proDeal" class="deal" hidden>
       <span class="tag">Ledgerly ticket</span>
@@ -1061,6 +1062,21 @@ async function layoutEditor() {
 }
 function go(delta) { const i = st.pages.indexOf(ed.p) + delta; if (i < 0 || i >= st.pages.length) return; ed.p = st.pages[i]; layoutEditor(); $('#edStage').scrollTop = 0; }
 $('#edPrev').onclick = () => go(-1); $('#edNext').onclick = () => go(1); $('#edDone').onclick = closeEditor;
+// Swipe left or right on the page to change page. Only with the Select tool, one finger, and never on an item you could be dragging.
+{
+  const stage = $('#edStage'); let s = null;
+  stage.addEventListener('touchstart', e => {
+    const zoomed = window.visualViewport && window.visualViewport.scale > 1.05;
+    if (!ed || ed.tool !== 'select' || e.touches.length !== 1 || zoomed || e.target.closest('.ann')) { s = null; return; }
+    s = { x: e.touches[0].clientX, y: e.touches[0].clientY, t: e.timeStamp };
+  }, { passive: true });
+  stage.addEventListener('touchend', e => {
+    if (!s || !ed || e.touches.length) { s = null; return; }
+    const t = e.changedTouches[0], dx = t.clientX - s.x, dy = t.clientY - s.y, quick = e.timeStamp - s.t < 800; s = null;
+    if (quick && Math.abs(dx) >= 60 && Math.abs(dx) > Math.abs(dy) * 1.5) go(dx < 0 ? 1 : -1);
+  }, { passive: true });
+  stage.addEventListener('touchcancel', () => { s = null; }, { passive: true });
+}
 window.addEventListener('resize', () => { if (ed) layoutEditor(); });
 
 function setTool(t) {
@@ -1283,7 +1299,9 @@ function closeModal(el) {
 /* ---------- Pro gate ---------- */
 const WHY = {
   pages: `Documents over ${FREE.pages} pages`, bigfile: 'Files over 25 MB', strong: 'Strong compression', pagenums: 'Page numbers', watermark: 'Watermarks',
-  splitbatch: 'Splitting into many files at once', batch: `Converting more than ${FREE.batch} files at once`, office: 'Converting to Excel and PowerPoint, and Office files to PDF', ocr: 'OCR for scanned PDFs'
+  splitbatch: 'Splitting into many files at once', batch: `Converting more than ${FREE.batch} files at once`, office: 'Converting to Excel and PowerPoint, and Office files to PDF', ocr: 'OCR for scanned PDFs',
+  redact: 'Redacting text for good', headfoot: 'Headers and footers', stamp: 'Stamps like APPROVED and DRAFT', booklet: 'Booklet printing', autocrop: 'Auto-cropping white margins',
+  target: 'Shrinking a file to a size you choose', scanclean: 'Cleaning up scans', imgmark: 'Watermarking photos'
 };
 function gate(feature) { if (pro.active) return true; openPro(feature); return false; }
 let pdfOffer = null;
@@ -2012,6 +2030,39 @@ function parseTime(s) {
 const IMG_OUT = async (f, c, suffix, note) => { const fmt = fmtFor(f, 'keep'), b = await toBlob(c, FMT[fmt][0], 0.92); if (!b) throw new Error('image'); return { name: stem(f.name) + suffix + '.' + FMT[fmt][1], type: FMT[fmt][0], data: await bytesOf(b), note }; };
 const H264 = ['-c:v', 'libx264', '-preset', 'veryfast', '-crf', '23', '-pix_fmt', 'yuv420p'];
 
+/* helpers for the Pro tools */
+// The page as you see it: its size, and how to turn a point on it (from the bottom left) into a point in the PDF, whatever its rotation.
+function frame(p) {
+  const b = p.getCropBox(), rot = rotOf(p), W = b.width, H = b.height, side = rot === 90 || rot === 270;
+  const map = (X, Y) => { const [x, y] = { 0: [X, Y], 90: [W - Y, X], 180: [W - X, H - Y], 270: [Y, H - X] }[rot]; return [b.x + x, b.y + y]; };
+  return { rot, DW: side ? H : W, DH: side ? W : H, map };
+}
+// A box seen on the page (pixels from the top left) turned into the PDF's own coordinates: [x0, x1, y0, y1].
+function userRect(rot, W, H, vx0, vy0, vx1, vy1) {
+  return { 0: [vx0, vx1, H - vy1, H - vy0], 90: [vy0, vy1, vx0, vx1], 180: [W - vx1, W - vx0, vy0, vy1], 270: [W - vy1, W - vy0, H - vx1, H - vx0] }[rot];
+}
+const rotPt = (x, y, deg) => { const t = deg * Math.PI / 180; return [x * Math.cos(t) - y * Math.sin(t), x * Math.sin(t) + y * Math.cos(t)]; };
+// Turns every page into a picture and builds a new PDF from them. Anything hidden underneath is gone for good.
+async function rasterize(pdf, { dpi, q = 0.8, png = false, fx, say, label = 'Page' }) {
+  const n = pdf.numPages, out = await PDFDocument.create();
+  for (let i = 1; i <= n; i++) {
+    if (say) say(`${label} ${i} of ${n}…`);
+    const pg = await pdf.getPage(i), size = pg.getViewport({ scale: 1 }), c = await renderPageCanvas(pg, dpi / 72);
+    if (fx) await fx(c, pg, i);
+    const blob = await toBlob(c, png ? 'image/png' : 'image/jpeg', q), img = png ? await out.embedPng(await bytesOf(blob)) : await out.embedJpg(await bytesOf(blob));
+    out.addPage([size.width, size.height]).drawImage(img, { x: 0, y: 0, width: size.width, height: size.height }); c.width = c.height = 0; pg.cleanup();
+  }
+  return out.save();
+}
+function lumaHist(c) { const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data, h = new Uint32Array(256); for (let i = 0; i < d.length; i += 4) h[lumaOf(d, i) | 0]++; return h; }
+const histPct = (h, total, p) => { let a = 0; for (let i = 0; i < 256; i++) { a += h[i]; if (a >= total * p) return i; } return 255; };
+function otsu(h, total) {
+  let sum = 0; for (let i = 0; i < 256; i++) sum += i * h[i];
+  let wB = 0, sB = 0, best = 0, cut = 128;
+  for (let t = 0; t < 256; t++) { wB += h[t]; if (!wB) continue; const wF = total - wB; if (!wF) break; sB += t * h[t]; const mB = sB / wB, mF = (sum - sB) / wF, v = wB * wF * (mB - mF) ** 2; if (v > best) { best = v; cut = t; } }
+  return cut;
+}
+
 /* what each tool asks for and does */
 const MEDIA = {
   imgcompress: {
@@ -2339,6 +2390,213 @@ const MEDIA = {
       const data = await ffRun(f, copy ? ['-c:v', 'copy', '-an', '-movflags', '+faststart'] : [...H264, '-an', '-movflags', '+faststart'], name, say);
       return { name, type: 'video/mp4', data, note: fmtBytes(data.length) };
     }
+  },
+
+  /* ----- Pro tools ----- */
+  pdfredact: {
+    pro: 'redact', title: 'Redact Text', accept: 'application/pdf,.pdf', go: 'Black Out & Download', slow: true,
+    lede: 'Permanently black out names, numbers or anything else you must not share. Every page is saved as a picture, so the hidden text cannot be copied or recovered. Scanned pages have no text to find, so run OCR on them first. The files stay on your device.',
+    opts: [
+      { id: 'words', label: 'Words or phrases to black out (separate with commas)', type: 'text', ph: 'e.g. Jane Smith, 12 Long Street' },
+      { id: 'email', label: 'Also black out email addresses', type: 'check', val: false },
+      { id: 'nums', label: 'Also black out long numbers (ID, phone, account and card numbers)', type: 'check', val: false },
+      { id: 'case', label: 'Match capital letters exactly', type: 'check', val: false },
+      { id: 'dpi', label: 'Sharpness', type: 'select', val: '130', list: [['100', 'Standard (smaller file)'], ['130', 'Good'], ['170', 'Sharp (larger file)']] }
+    ],
+    async run(f, v, say) {
+      const parts = String(v.words || '').split(/[,;\n]/).map(s => s.trim()).filter(Boolean).map(t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '\\s+'));
+      if (v.email) parts.push('[\\w.+-]+@[\\w-]+(?:\\.[\\w-]+)+'); if (v.nums) parts.push('\\d(?:[ -]?\\d){5,}');
+      if (!parts.length) throw fail('Type at least one word or phrase, or tick one of the boxes.');
+      const re = new RegExp(parts.join('|'), v.case ? 'g' : 'gi'), pdf = await openPdfJs(f), jobs = new Map(); let found = 0, chars = 0;
+      for (let i = 1; i <= pdf.numPages; i++) {
+        say(`Looking for text on page ${i} of ${pdf.numPages}…`);
+        const pg = await pdf.getPage(i), tc = await pg.getTextContent(), items = tc.items.filter(it => it.str), vp = pg.getViewport({ scale: +v.dpi / 72 }), boxes = [];
+        // Letters are not all the same width, so measure them to find where a match starts and ends inside a line of text.
+        const mx = document.createElement('canvas').getContext('2d'), share = (it, upto) => { mx.font = `bold 100px ${(tc.styles[it.fontName] && tc.styles[it.fontName].fontFamily) || 'sans-serif'}`; const all = mx.measureText(it.str).width; return all ? mx.measureText(it.str.slice(0, upto)).width / all : upto / it.str.length; };
+        let s = '', offs = [], prev = null;
+        for (const it of items) {
+          if (prev) { const a = prev.transform, b = it.transform, same = Math.abs(b[5] - a[5]) < Math.max(prev.height, it.height) * 0.5, gap = b[4] - (a[4] + prev.width); if (!(same && gap < it.height * 0.15) && !/\s$/.test(prev.str) && !/^\s/.test(it.str)) s += ' '; }
+          offs.push(s.length); s += it.str; prev = it;
+        }
+        chars += s.length;
+        for (const m of s.matchAll(re)) {
+          if (!m[0]) continue; found++; const a = m.index, b = a + m[0].length;
+          items.forEach((it, k) => {
+            const len = it.str.length, o = offs[k]; if (!len || o >= b || o + len <= a) return;
+            const i0 = Math.max(a, o) - o, i1 = Math.min(b, o + len) - o, f0 = i0 ? share(it, i0) : 0, f1 = i1 >= len ? 1 : share(it, i1), t = it.transform, ul = Math.hypot(t[0], t[1]) || 1, vl = Math.hypot(t[2], t[3]) || 1, h = it.height || vl, pad = Math.max(2, h * 0.3);
+            const U = [t[0] / ul, t[1] / ul], V = [t[2] / vl, t[3] / vl], w = it.width, pts = [[f0 * w - pad, -0.25 * h], [f1 * w + pad, -0.25 * h], [f1 * w + pad, 1.05 * h], [f0 * w - pad, 1.05 * h]].map(([x, y]) => vp.convertToViewportPoint(t[4] + U[0] * x + V[0] * y, t[5] + U[1] * x + V[1] * y));
+            boxes.push([Math.min(...pts.map(p => p[0])), Math.min(...pts.map(p => p[1])), Math.max(...pts.map(p => p[0])), Math.max(...pts.map(p => p[1]))]);
+          });
+        }
+        jobs.set(i, boxes); pg.cleanup();
+      }
+      if (!chars) throw fail('No text found in this PDF. If it is a scan, run OCR on it first.');
+      if (!found) throw fail('Nothing matched, so the file is unchanged. Check the spelling.');
+      const data = await rasterize(pdf, { dpi: +v.dpi, q: 0.85, say, label: 'Blacking out page', fx: (c, pg, i) => { const x = c.getContext('2d'); x.fillStyle = '#000'; for (const [x0, y0, x1, y1] of jobs.get(i)) x.fillRect(x0, y0, x1 - x0, y1 - y0); } });
+      return pdfResult(data, f, '-redacted', `${found} ${found === 1 ? 'place' : 'places'} blacked out. Look through the result before you share it.`);
+    }
+  },
+  pdfhf: {
+    pro: 'headfoot', title: 'Header & Footer', accept: 'application/pdf,.pdf', go: 'Add & Download',
+    lede: 'Print a line of text at the top and bottom of every page, such as a title, a date or "Page 3 of 10". Use {page}, {pages}, {date} and {file} for numbers, the date and the file name. The files stay on your device.',
+    opts: [
+      { id: 'hl', label: 'Header, left', type: 'text' }, { id: 'hc', label: 'Header, middle', type: 'text' }, { id: 'hr', label: 'Header, right', type: 'text' },
+      { id: 'fl', label: 'Footer, left', type: 'text' }, { id: 'fc', label: 'Footer, middle', type: 'text', val: 'Page {page} of {pages}' }, { id: 'fr', label: 'Footer, right', type: 'text' },
+      { id: 'size', label: 'Text size', type: 'select', val: '10', list: [['8', 'Small'], ['10', 'Medium'], ['12', 'Large']] },
+      { id: 'skip', label: 'Leave the first page blank', type: 'check', val: false }
+    ],
+    async run(f, v) {
+      if (!['hl', 'hc', 'hr', 'fl', 'fc', 'fr'].some(k => String(v[k] || '').trim())) throw fail('Type something for at least one spot.');
+      const doc = await loadPdf(f), font = await doc.embedFont(StandardFonts.Helvetica), size = +v.size, n = doc.getPageCount(), date = new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' }), M = 30;
+      doc.getPages().forEach((p, i) => {
+        if (v.skip && !i) return; const fr = frame(p);
+        for (const [k, top] of [['hl', 1], ['hc', 1], ['hr', 1], ['fl', 0], ['fc', 0], ['fr', 0]]) {
+          const raw = String(v[k] || '').trim(); if (!raw) continue;
+          const text = ansi(font, raw.replace(/\{page\}/gi, i + 1).replace(/\{pages\}/gi, n).replace(/\{date\}/gi, date).replace(/\{file\}/gi, stem(f.name))), tw = font.widthOfTextAtSize(text, size), col = k[1];
+          const X = col === 'l' ? M : col === 'c' ? (fr.DW - tw) / 2 : fr.DW - M - tw, Y = top ? fr.DH - M - size * 0.8 : M, [x, y] = fr.map(X, Y);
+          p.drawText(text, { x, y, size, font, color: rgb(0.2, 0.2, 0.2), rotate: degrees(fr.rot) });
+        }
+      });
+      const data = await doc.save(); return pdfResult(data, f, '-hf', `${n} pages, ${fmtBytes(data.length)}`);
+    }
+  },
+  pdfstamp: {
+    pro: 'stamp', title: 'Stamp PDF', accept: 'application/pdf,.pdf', go: 'Stamp & Download',
+    lede: 'Press a rubber stamp such as APPROVED, DRAFT or PAID onto your pages. The files stay on your device.',
+    opts: [
+      { id: 'label', label: 'Stamp', type: 'select', val: 'APPROVED', list: [['APPROVED', 'APPROVED'], ['DRAFT', 'DRAFT'], ['CONFIDENTIAL', 'CONFIDENTIAL'], ['PAID', 'PAID'], ['RECEIVED', 'RECEIVED'], ['FOR REVIEW', 'FOR REVIEW'], ['VOID', 'VOID'], ['COPY', 'COPY'], ['custom', 'Write my own…']] },
+      { id: 'custom', label: 'Your stamp text', type: 'text', ph: 'e.g. SIGNED', when: 'label=custom' },
+      { id: 'color', label: 'Colour', type: 'select', val: 'red', list: [['red', 'Red'], ['green', 'Green'], ['blue', 'Blue'], ['gray', 'Grey']] },
+      { id: 'where', label: 'Where', type: 'select', val: 'tr', list: [['tr', 'Top right'], ['tl', 'Top left'], ['c', 'Centre'], ['br', 'Bottom right'], ['bl', 'Bottom left']] },
+      { id: 'size', label: 'Size', type: 'select', val: '36', list: [['26', 'Small'], ['36', 'Medium'], ['54', 'Large']] },
+      { id: 'pages', label: 'Pages', type: 'select', val: 'all', list: [['all', 'Every page'], ['first', 'First page only'], ['last', 'Last page only']] },
+      { id: 'tilt', label: 'Tilt it a little, like a real stamp', type: 'check', val: true }
+    ],
+    async run(f, v) {
+      const text = (v.label === 'custom' ? String(v.custom || '').trim() : v.label).toUpperCase(); if (!text) throw fail('Type the words for your stamp.');
+      const doc = await loadPdf(f), font = await doc.embedFont(StandardFonts.HelveticaBold), size = +v.size, shown = ansi(font, text), tw = font.widthOfTextAtSize(shown, size), pad = size * 0.3, bw = tw + pad * 2, bh = size * 1.0 + pad * 2;
+      const col = { red: rgb(0.78, 0.1, 0.1), green: rgb(0.05, 0.5, 0.25), blue: rgb(0.1, 0.25, 0.7), gray: rgb(0.4, 0.4, 0.4) }[v.color], ang = v.tilt ? 14 : 0, pages = doc.getPages(), M = 36;
+      pages.forEach((p, i) => {
+        if ((v.pages === 'first' && i) || (v.pages === 'last' && i !== pages.length - 1)) return;
+        const fr = frame(p), half = Math.hypot(bw, bh) / 2 * (v.tilt ? 0.9 : 0.5) + M * 0.2;
+        const cx = v.where.endsWith('l') ? M + half : v.where.endsWith('r') ? fr.DW - M - half : fr.DW / 2, cy = v.where.startsWith('t') ? fr.DH - M - half : v.where.startsWith('b') ? M + half : fr.DH / 2;
+        const [rx, ry] = rotPt(-bw / 2, -bh / 2, ang), [tx, ty] = rotPt(-tw / 2, -size * 0.36, ang), [bx, by] = fr.map(cx + rx, cy + ry), [px, py] = fr.map(cx + tx, cy + ty);
+        p.drawRectangle({ x: bx, y: by, width: bw, height: bh, borderWidth: size * 0.09, borderColor: col, opacity: 0, borderOpacity: 0.85, rotate: degrees(ang + fr.rot) });
+        p.drawText(shown, { x: px, y: py, size, font, color: col, opacity: 0.85, rotate: degrees(ang + fr.rot) });
+      });
+      const data = await doc.save(); return pdfResult(data, f, '-stamped', `${pages.length} pages, ${fmtBytes(data.length)}`);
+    }
+  },
+  pdfbooklet: {
+    pro: 'booklet', title: 'Booklet Printing', accept: 'application/pdf,.pdf', go: 'Make Booklet',
+    lede: 'Reorders and shrinks your pages so that, printed double-sided and folded in half, they read in order as a booklet. Print with “flip on short edge”. The files stay on your device.',
+    opts: [{ id: 'size', label: 'Paper size', type: 'select', val: 'a4', list: SHEET_LIST.slice(0, 3) }],
+    async run(f, v) {
+      const [a, b] = SHEETS[v.size], W = b, H = a, M = 16, half = W / 2, src = await loadPdf(f), out = await PDFDocument.create(), pages = src.getPages(), n = pages.length, embs = await embedAll(out, pages);
+      if (n < 2) throw fail('A booklet needs at least two pages.');
+      const total = Math.ceil(n / 4) * 4, sides = [];
+      for (let s = 0; s < total / 4; s++) { sides.push([total - 1 - 2 * s, 2 * s]); sides.push([2 * s + 1, total - 2 - 2 * s]); }
+      for (const side of sides) { const sheet = out.addPage([W, H]); side.forEach((idx, k) => { if (idx < n) fitPage(sheet, embs[idx], rotOf(pages[idx]), k * half + M, M, half - 2 * M, H - 2 * M); }); }
+      const data = await out.save(); return pdfResult(data, f, '-booklet', `${n} pages on ${sides.length} sides (${sides.length / 2} sheets)`);
+    }
+  },
+  pdfautocrop: {
+    pro: 'autocrop', title: 'Auto-Crop Margins', accept: 'application/pdf,.pdf', go: 'Crop & Download', slow: true,
+    lede: 'Finds where the content really is on each page and trims the empty white edges. Good for scans and slides. The text stays selectable. The files stay on your device.',
+    opts: [{ id: 'pad', label: 'Space to leave around the content', type: 'select', val: '12', list: [['0', 'None'], ['6', 'A little'], ['12', 'Some'], ['24', 'A lot']] }],
+    async run(f, v, say) {
+      const doc = await loadPdf(f), pdf = await openPdfJs(f), n = doc.getPageCount(), pad = +v.pad, S = 0.5; let changed = 0;
+      for (let i = 0; i < n; i++) {
+        say(`Page ${i + 1} of ${n}…`);
+        const pg = await pdf.getPage(i + 1), c = await renderPageCanvas(pg, S), d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; let x0 = c.width, y0 = c.height, x1 = -1, y1 = -1;
+        for (let y = 0; y < c.height; y++) for (let x = 0; x < c.width; x++) { if (lumaOf(d, (y * c.width + x) * 4) < 238) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; } }
+        const DW = c.width / S, DH = c.height / S; pg.cleanup(); c.width = c.height = 0; if (x1 < 0) continue;
+        const p = doc.getPage(i), b = p.getCropBox(), r = userRect(rotOf(p), b.width, b.height, Math.max(0, x0 / S - pad), Math.max(0, y0 / S - pad), Math.min(DW, (x1 + 1) / S + pad), Math.min(DH, (y1 + 1) / S + pad));
+        const w = r[1] - r[0], h = r[3] - r[2]; if (w < 36 || h < 36) continue;
+        p.setCropBox(b.x + r[0], b.y + r[2], w, h); p.setMediaBox(b.x + r[0], b.y + r[2], w, h); changed++;
+      }
+      if (!changed) throw fail('Every page looks empty, so there is nothing to crop to.');
+      const data = await doc.save(); return pdfResult(data, f, '-autocrop', `${changed} of ${n} pages trimmed`);
+    }
+  },
+  pdftarget: {
+    pro: 'target', title: 'Compress to a Size', accept: 'application/pdf,.pdf', go: 'Shrink & Download', slow: true,
+    lede: 'Need a PDF under 2 MB for an email or an online form? Choose the limit and this tries stronger settings until the file fits. The pages become pictures, so the text can no longer be selected. The files stay on your device.',
+    opts: [{ id: 'mb', label: 'Make it smaller than', type: 'select', val: '2', list: [['0.5', '500 KB'], ['1', '1 MB'], ['2', '2 MB'], ['5', '5 MB'], ['10', '10 MB']] }],
+    async run(f, v, say) {
+      const limit = +v.mb * 1048576;
+      if (f.size <= limit) return { name: f.name, type: 'application/pdf', data: new Uint8Array(await f.arrayBuffer()), note: `Already ${fmtBytes(f.size)}, so it is unchanged.` };
+      const tiers = [[150, 0.72], [120, 0.6], [100, 0.5], [85, 0.42], [72, 0.35], [60, 0.3]]; let best = null;
+      for (let t = 0; t < tiers.length; t++) {
+        const pdf = await openPdfJs(f), data = await rasterize(pdf, { dpi: tiers[t][0], q: tiers[t][1], say: s => say(`Try ${t + 1} of ${tiers.length}. ${s}`) });
+        if (!best || data.length < best.length) best = data; if (data.length <= limit) { best = data; break; }
+      }
+      return pdfResult(best, f, '-small', best.length <= limit ? sizeNote(f.size, best.length) : `Got it down to ${fmtBytes(best.length)}, which is as small as it goes. It is still over ${fmtBytes(limit)}.`);
+    }
+  },
+  pdfscan: {
+    pro: 'scanclean', title: 'Clean Up Scan', accept: 'application/pdf,.pdf', go: 'Clean Up & Download', slow: true,
+    lede: 'Whitens grey paper and sharpens the ink on scanned pages, so they look like proper documents and print better. The pages become pictures. The files stay on your device.',
+    opts: [
+      { id: 'mode', label: 'Result', type: 'select', val: 'colour', list: [['colour', 'Whiter paper, keep colours'], ['bw', 'Crisp black and white']] },
+      { id: 'dpi', label: 'Sharpness', type: 'select', val: '150', list: [['120', 'Standard (smaller file)'], ['150', 'Good'], ['200', 'Sharp (larger file)']] }
+    ],
+    async run(f, v, say) {
+      const bw = v.mode === 'bw', pdf = await openPdfJs(f);
+      const data = await rasterize(pdf, { dpi: +v.dpi, q: 0.82, png: bw, say, label: 'Cleaning page', fx: c => {
+        const total = c.width * c.height, h = lumaHist(c);
+        if (bw) { const cut = otsu(h, total); pixels(c, (d, i) => { d[i] = d[i + 1] = d[i + 2] = lumaOf(d, i) <= cut ? 0 : 255; }); return; }
+        // Paper is rarely pure white, so each colour is stretched on its own. That turns tinted paper white while the ink keeps its colour.
+        const src = c.getContext('2d').getImageData(0, 0, c.width, c.height).data, ch = [new Uint32Array(256), new Uint32Array(256), new Uint32Array(256)];
+        for (let i = 0; i < src.length; i += 4) { ch[0][src[i]]++; ch[1][src[i + 1]]++; ch[2][src[i + 2]]++; }
+        const lo = histPct(h, total, 0.01), k = ch.map(x => 255 / (Math.max(lo + 40, histPct(x, total, 0.9)) - lo));
+        pixels(c, (d, i) => { d[i] = (d[i] - lo) * k[0]; d[i + 1] = (d[i + 1] - lo) * k[1]; d[i + 2] = (d[i + 2] - lo) * k[2]; });
+      } });
+      return pdfResult(data, f, '-clean', sizeNote(f.size, data.length));
+    }
+  },
+  imgmark: {
+    pro: 'imgmark', title: 'Watermark Photos', accept: 'image/*', go: 'Add Watermark & Download', image: true,
+    lede: 'Put your name or brand over your photos before you post them, so they are harder to steal. Pick several photos to mark them all at once. The files stay on your device.',
+    opts: [
+      { id: 'text', label: 'Watermark text', type: 'text', ph: 'e.g. © Your Name' },
+      { id: 'where', label: 'Where', type: 'select', val: 'tile', list: [['tile', 'Repeated across the photo'], ['br', 'Bottom right corner'], ['c', 'Centre']] },
+      { id: 'size', label: 'Size', type: 'select', val: 'm', list: [['s', 'Small'], ['m', 'Medium'], ['l', 'Large']] },
+      { id: 'alpha', label: 'How strong', type: 'select', val: '0.4', list: [['0.2', 'Faint'], ['0.4', 'Medium'], ['0.65', 'Bold']] },
+      { id: 'color', label: 'Colour', type: 'select', val: '#ffffff', list: [['#ffffff', 'White'], ['#000000', 'Black'], ['#888888', 'Grey']] }
+    ],
+    async run(f, v) {
+      const text = String(v.text || '').trim(); if (!text) throw fail('Type the watermark text first.');
+      try { await document.fonts.load('700 20px Geist'); } catch {}
+      const bmp = await loadBitmap(f), c = drawn(bmp, bmp.width, bmp.height, fmtFor(f, 'keep') === 'jpg'), x = c.getContext('2d'), base = Math.max(14, Math.round(c.width * { s: 0.03, m: 0.05, l: 0.08 }[v.size]));
+      x.font = `700 ${base}px Geist, system-ui, sans-serif`; x.textBaseline = 'middle'; x.globalAlpha = +v.alpha; x.fillStyle = v.color; x.shadowColor = v.color === '#000000' ? 'rgba(255,255,255,.6)' : 'rgba(0,0,0,.55)'; x.shadowBlur = base * 0.18;
+      if (v.where === 'tile') {
+        x.translate(c.width / 2, c.height / 2); x.rotate(-Math.PI / 6); const tw = x.measureText(text).width + base * 2, th = base * 3.4, diag = Math.hypot(c.width, c.height); let row = 0;
+        for (let yy = -diag; yy < diag; yy += th, row++) for (let xx = -diag + (row % 2 ? tw / 2 : 0); xx < diag; xx += tw) x.fillText(text, xx, yy);
+      } else if (v.where === 'br') { x.textAlign = 'right'; x.fillText(text, c.width - base * 0.8, c.height - base); }
+      else { x.textAlign = 'center'; x.fillText(text, c.width / 2, c.height / 2); }
+      return IMG_OUT(f, c, '-marked', `${c.width} x ${c.height} px`);
+    }
+  },
+  imgtarget: {
+    pro: 'target', title: 'Compress Image to a Size', accept: 'image/*', go: 'Shrink & Download', image: true,
+    lede: 'Need a photo under 200 KB for a form or an upload? Choose the limit and this finds the best quality that fits, and makes the picture smaller if it has to. The files stay on your device.',
+    opts: [
+      { id: 'kb', label: 'Make it smaller than', type: 'select', val: '200', list: [['50', '50 KB'], ['100', '100 KB'], ['200', '200 KB'], ['500', '500 KB'], ['1024', '1 MB'], ['2048', '2 MB']] },
+      { id: 'fmt', label: 'Save as', type: 'select', val: 'jpg', list: [['jpg', 'JPG'], ['webp', 'WebP']] }
+    ],
+    async run(f, v) {
+      const limit = +v.kb * 1024, bmp = await loadBitmap(f), fmt = v.fmt; let w = bmp.width, h = bmp.height, best = null, scaled = false;
+      if (f.size <= limit && fmtFor(f, 'keep') === fmt) return { name: f.name, type: f.type, data: await bytesOf(f), note: `Already ${fmtBytes(f.size)}, so it is unchanged.` };
+      for (let step = 0; step < 14 && !best; step++) {
+        const c = drawn(bmp, w, h, true); let lo = 0.3, hi = 0.95;
+        for (let it = 0; it < 7; it++) { const q = (lo + hi) / 2, b = await toBlob(c, FMT[fmt][0], q); if (b && b.size <= limit) { best = b; lo = q; } else hi = q; }
+        if (!best) { w = Math.round(w * 0.85); h = Math.round(h * 0.85); scaled = true; if (Math.min(w, h) < 200) break; }
+      }
+      if (!best) throw fail('That limit is too small for this picture. Try a bigger size.');
+      const data = await bytesOf(best);
+      return { name: stem(f.name) + '-small.' + FMT[fmt][1], type: FMT[fmt][0], data, note: sizeNote(f.size, data.length) + (scaled ? `, resized to ${w} x ${h} px` : '') };
+    }
   }
 };
 
@@ -2379,6 +2637,7 @@ $('#mtPick').onclick = () => { const T = MEDIA[mt.id]; $('#mtIn').accept = T.acc
 $('#mtIn').onchange = e => { const fs = [...e.target.files]; e.target.value = ''; if (!fs.length) return; mt.files = fs; mtClearOut(); $('#mtMsg').textContent = ''; mtRender(); };
 $('#mtGo').onclick = async () => {
   const T = MEDIA[mt.id], msg = $('#mtMsg'), n = mt.files.length; if (!n || mt.busy) return;
+  if (T.pro && !gate(T.pro)) return;
   if (n > FREE.batch && !gate('batch')) return;
   if (!pro.active && mt.files.some(f => f.size > FREE.bytes)) { gate('bigfile'); return; }
   const v = mtCollect(), out = []; mt.busy = true; mtClearOut(); mtRender();
@@ -2393,7 +2652,7 @@ $('#mtGo').onclick = async () => {
     if (out.length === 1) { await saveBlob(new Blob([out[0].data], { type: out[0].type }), out[0].name); msg.textContent = `Saved ${out[0].name}.`; }
     else { await saveBlob(makeZip(out), 'converted.zip'); msg.textContent = `Saved ${out.length} files in converted.zip.`; }
   } catch (err) {
-    console.error(err);
+    if (!err.say) console.error(err);
     msg.textContent = err.say ? err.say : err.message === 'size' ? 'Enter a width or a height first.' : err.message === 'image' ? 'That picture couldn’t be read. It may be damaged or in a format this browser can’t open.' : err.message === 'lib' ? 'Couldn’t load the helper this tool needs. Check your connection and try again.' : T.slow ? 'That file couldn’t be converted. It may be damaged or in a format this tool can’t read. Very large files can also run out of memory.' : 'That didn’t work. Please try another file.';
   } finally { mt.busy = false; mtRender(); }
 };
@@ -2432,7 +2691,15 @@ const ICONS = {
   filter: '<circle cx="9" cy="9" r="5"/><circle cx="15" cy="9" r="5"/><circle cx="12" cy="15" r="5"/>',
   trim: '<rect x="3" y="6" width="18" height="12" rx="2"/><path d="M8 6v12M16 6v12"/>',
   gif: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M10 9.5v5l4-2.5z"/>',
-  mute: '<path d="M11 5 6 9H3v6h3l5 4zM16 9l5 6M21 9l-5 6"/>'
+  mute: '<path d="M11 5 6 9H3v6h3l5 4zM16 9l5 6M21 9l-5 6"/>',
+  redact: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9h6M7 15h10" /><rect x="7" y="11.5" width="10" height="1" style="fill:var(--accent-fg)"/>',
+  headfoot: '<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M4 8h16M4 16h16"/>',
+  stamp: '<path d="M8 21h8M5 17h14v4H5zM9 17c0-3 1-4 1-6a2 2 0 1 1 4 0c0 2 1 3 1 6M12 5.5V4"/>',
+  booklet: '<path d="M12 6v14M12 6C10 4.5 6 4.5 3 5.5v13c3-1 7-1 9 .5M12 6c2-1.5 6-1.5 9-.5v13c-3-1-7-1-9 .5"/>',
+  autocrop: '<path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3"/><rect x="9" y="9" width="6" height="6" rx="1"/>',
+  target: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.2"/>',
+  scan: '<path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2M3 12h18"/>',
+  mark: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m8 15 2.5-3 2 2.5L15 12l3 3.5M9 9.2v.01"/>'
 };
 const TOOLS = [
   { g: 'Organize', id: 'merge', icon: 'merge', name: 'Merge PDF', desc: 'Combine files into one' },
@@ -2446,11 +2713,18 @@ const TOOLS = [
   { g: 'Edit & Sign', id: 'pagenums', icon: 'pagenum', name: 'Page Numbers', desc: 'Number every page', pro: 'pagenums' },
   { g: 'Edit & Sign', id: 'watermark', icon: 'watermark', name: 'Watermark', desc: 'Stamp text across pages', pro: 'watermark' },
   { g: 'Edit & Sign', id: 'pdfinfo', icon: 'info', name: 'Edit PDF Info', desc: 'Title, author, keywords' },
+  { g: 'Edit & Sign', id: 'pdfredact', icon: 'redact', name: 'Redact Text', desc: 'Black out for good', pro: 'redact' },
+  { g: 'Edit & Sign', id: 'pdfhf', icon: 'headfoot', name: 'Header & Footer', desc: 'Titles, dates, page x of y', pro: 'headfoot' },
+  { g: 'Edit & Sign', id: 'pdfstamp', icon: 'stamp', name: 'Stamp PDF', desc: 'APPROVED, DRAFT, PAID', pro: 'stamp' },
   { g: 'Page Layout', id: 'pdfcrop', icon: 'crop', name: 'Crop PDF', desc: 'Trim the margins' },
   { g: 'Page Layout', id: 'pdfsize', icon: 'pagesize', name: 'Change Page Size', desc: 'A4, Letter and more' },
   { g: 'Page Layout', id: 'pdfnup', icon: 'nup', name: 'Pages per Sheet', desc: '2, 4, 6 or 9 to print' },
+  { g: 'Page Layout', id: 'pdfbooklet', icon: 'booklet', name: 'Booklet Printing', desc: 'Print, fold, read in order', pro: 'booklet' },
+  { g: 'Page Layout', id: 'pdfautocrop', icon: 'autocrop', name: 'Auto-Crop Margins', desc: 'Trim the empty edges', pro: 'autocrop' },
   { g: 'Optimize', id: 'compress', icon: 'compress', name: 'Compress PDF', desc: 'Shrink the file size' },
   { g: 'Optimize', id: 'pdfgray', icon: 'gray', name: 'Grayscale PDF', desc: 'Save ink when printing' },
+  { g: 'Optimize', id: 'pdftarget', icon: 'target', name: 'Compress to a Size', desc: 'Get under 2 MB, 5 MB…', pro: 'target' },
+  { g: 'Optimize', id: 'pdfscan', icon: 'scan', name: 'Clean Up Scan', desc: 'Whiter paper, sharper ink', pro: 'scanclean' },
   { g: 'Convert', id: 'img2pdf', icon: 'image', name: 'JPG to PDF', desc: 'Images become pages' },
   { g: 'Convert', id: 'pdf2img', icon: 'image', name: 'PDF to JPG', desc: 'Every page as an image' },
   { g: 'Convert', id: 'pdf2txt', icon: 'text', name: 'PDF to Text', desc: 'Pull out the text' },
@@ -2467,6 +2741,8 @@ const TOOLS = [
   { g: 'Images', id: 'imgflip', icon: 'flip', name: 'Rotate & Flip Image', desc: 'Turn or mirror a photo' },
   { g: 'Images', id: 'imgcrop', icon: 'crop', name: 'Crop Image', desc: 'Square, 16:9 and more' },
   { g: 'Images', id: 'imgfilter', icon: 'filter', name: 'Image Filters', desc: 'Black and white, sepia' },
+  { g: 'Images', id: 'imgmark', icon: 'mark', name: 'Watermark Photos', desc: 'Protect your pictures', pro: 'imgmark' },
+  { g: 'Images', id: 'imgtarget', icon: 'target', name: 'Compress to a Size', desc: 'Get under 200 KB, 1 MB…', pro: 'target' },
   { g: 'Create', id: 'qr', icon: 'qr', name: 'QR Code Generator', desc: 'Links, Wi-Fi, WhatsApp' },
   { g: 'Audio & Video', id: 'vidcompress', icon: 'video', name: 'Compress Video', desc: 'Smaller MP4 files' },
   { g: 'Audio & Video', id: 'vidtrim', icon: 'trim', name: 'Trim Video', desc: 'Cut to the part you want' },
@@ -2502,7 +2778,7 @@ function runIntent(id) {
 function startTool(id) {
   const t = TOOLS.find(x => x.id === id);
   if (t && t.soon) { toast('This tool is coming soon.'); return; }
-  if (MEDIA[id]) { openMedia(id); return; }
+  if (MEDIA[id]) { if (MEDIA[id].pro && !gate(MEDIA[id].pro)) return; openMedia(id); return; }
   if (CONVERT[id]) { openConvert(id); return; }
   if (t.pro && !gate(t.pro)) return;
   st.intent = id;
