@@ -26,7 +26,7 @@
 {"@type":"WebApplication","@id":"https://pdfedit.ascsoftware.co.za/#app","name":"ASC PDF Editor and Converter","url":"https://pdfedit.ascsoftware.co.za/","description":"Free online PDF editor. Edit, merge, split, rotate, sign, compress and convert PDFs in your browser.","applicationCategory":"UtilitiesApplication","operatingSystem":"Any","browserRequirements":"Requires JavaScript","inLanguage":"en","isAccessibleForFree":true,"offers":{"@type":"Offer","price":"0","priceCurrency":"ZAR"},"featureList":["Edit PDF: add text, highlights, whiteout and images","Merge PDF files","Split PDF and extract pages","Rotate and reorder pages","Sign PDF","Compress PDF","PDF to Word","PDF to JPG and PNG","JPG to PDF"],"publisher":{"@id":"https://ascsoftware.co.za/#org"}}
 ]}
 </script>
-<meta name="theme-color" content="#f7f8fa">
+<meta name="theme-color" content="#f5f2e9">
 <link rel="icon" href="/favicon.ico" sizes="48x48">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
@@ -35,30 +35,31 @@
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="preload" href="fonts/geist-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
 <script>(function(){var t;try{t=localStorage.getItem('asc_pdf_theme')}catch(e){}if(t!=='light'&&t!=='dark')t=matchMedia('(prefers-color-scheme: light)').matches?'light':'dark';document.documentElement.setAttribute('data-theme',t)})()</script>
-<meta name="theme-color" content="#121212">
+<meta name="theme-color" content="#0e1713">
 <style>
 @font-face{font-family:Geist;src:url(fonts/geist-latin-wght-normal.woff2) format("woff2");font-weight:100 900;font-style:normal;font-display:swap}
 :root,[data-theme=dark]{
-  --ink:#ececec; --muted:#a1a1a6; --bg:#121212; --surface:#1c1c1e; --line:#333336;
-  --accent:#34d399; --accent-ink:#04271c; --accent-fg:#34d399; --accent-hover:#2cc48e;
-  --accent-soft:rgba(52,211,153,.12); --accent-soft2:rgba(52,211,153,.22); --accent-line:rgba(52,211,153,.4);
+  --ink:#f2efe6; --muted:#a3ada6; --bg:#0e1713; --surface:#15221c; --line:#26362e;
+  --accent:#4cc99a; --accent-ink:#06241a; --accent-fg:#4cc99a; --accent-hover:#3fb78a;
+  --accent-soft:rgba(76,201,154,.12); --accent-soft2:rgba(76,201,154,.22); --accent-line:rgba(76,201,154,.4);
+  --tan:#e8d5b0;
   --danger:#f87171; --danger-soft:rgba(248,113,113,.12); --danger-line:rgba(248,113,113,.4); --danger-ink:#fecaca;
-  --raise:#161617; --thumb:#161617; --chk-bg:rgba(28,28,30,.92); --editor-bg:#0c0c0d; --dash:#48484c;
-  --pill-bg:rgba(251,191,36,.14); --pill-ink:#fbbf24; --pill-line:rgba(251,191,36,.32);
-  --hdr:rgba(18,18,18,.9); --toast-bg:#2a2a2d; --tile-hover:#242426;
+  --raise:#111c17; --thumb:#111c17; --chk-bg:rgba(21,34,28,.92); --editor-bg:#0a110e; --dash:#3a4e44;
+  --pill-bg:rgba(232,213,176,.12); --pill-ink:#e8d5b0; --pill-line:rgba(232,213,176,.3);
+  --hdr:rgba(14,23,19,.85); --toast-bg:#223229; --tile-hover:#1b2c24;
   --radius:12px; --shadow:0 1px 2px rgba(0,0,0,.4),0 4px 12px rgba(0,0,0,.45); --shadow-bar:0 6px 16px rgba(0,0,0,.35);
   --ease:cubic-bezier(.2,.8,.2,1);
   color-scheme:dark;
 }
 [data-theme=light]{
-  --ink:#0f172a; --muted:#566176; --bg:#f7f8fa; --surface:#fff; --line:#e2e6ec;
-  --accent:#047857; --accent-ink:#fff; --accent-fg:#047857; --accent-hover:#036649;
-  --accent-soft:rgba(16,185,129,.1); --accent-soft2:rgba(16,185,129,.2); --accent-line:rgba(4,120,87,.4);
+  --ink:#14211b; --muted:#56635b; --bg:#f5f2e9; --surface:#fffdf8; --line:#e3ddcc;
+  --accent:#14684f; --accent-ink:#fff; --accent-fg:#14684f; --accent-hover:#0f5440;
+  --accent-soft:rgba(20,104,79,.08); --accent-soft2:rgba(20,104,79,.16); --accent-line:rgba(20,104,79,.4);
   --danger:#b3261e; --danger-soft:#fbeceb; --danger-line:#e6b4b0; --danger-ink:#6b1a15;
-  --raise:#f1f3f6; --thumb:#eceff3; --chk-bg:rgba(255,255,255,.92); --editor-bg:#e6e9ee; --dash:#c3cad5;
-  --pill-bg:rgba(245,158,11,.14); --pill-ink:#92400e; --pill-line:rgba(180,83,9,.3);
-  --hdr:rgba(247,248,250,.9); --toast-bg:#0f172a; --tile-hover:#f0fbf6;
-  --shadow:0 1px 2px rgba(15,23,42,.08),0 4px 14px rgba(15,23,42,.08); --shadow-bar:0 6px 16px rgba(15,23,42,.08);
+  --raise:#efeadc; --thumb:#ece7d8; --chk-bg:rgba(255,253,248,.92); --editor-bg:#e4dfd0; --dash:#c9c1aa;
+  --pill-bg:rgba(232,213,176,.55); --pill-ink:#6b4f12; --pill-line:rgba(140,105,40,.35);
+  --hdr:rgba(245,242,233,.88); --toast-bg:#14211b; --tile-hover:#edf3ea;
+  --shadow:0 1px 2px rgba(20,33,27,.08),0 4px 14px rgba(20,33,27,.08); --shadow-bar:0 6px 16px rgba(20,33,27,.08);
   color-scheme:light;
 }
 *{box-sizing:border-box}
@@ -88,11 +89,26 @@ h2{font-size:1.35rem;font-weight:600;letter-spacing:-.02em;margin:48px 0 12px;te
 .btn.primary:hover:not(:disabled){background:var(--accent-hover);border-color:var(--accent-hover)}
 .btn[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent-fg);color:var(--accent-fg)}
 .btn.danger:hover:not(:disabled){background:var(--danger-soft);border-color:var(--danger-line);color:var(--danger)}
-.drop{border:1.5px dashed var(--dash);border-radius:24px;background:var(--surface);box-shadow:var(--shadow);padding:56px 20px;text-align:center;transition:background-color .15s,border-color .15s}
+.drop{position:relative;isolation:isolate;overflow:hidden;border:1.5px dashed var(--dash);border-radius:24px;background:var(--surface);box-shadow:var(--shadow);padding:44px 20px 48px;text-align:center;transition:background-color .15s,border-color .15s}
+.drop::before{content:"";position:absolute;z-index:-1;right:-28px;bottom:-34px;width:300px;height:220px;background:var(--tan);opacity:.09;pointer-events:none;-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 220'%3E%3Cpath d='M0 220 120 30 240 220Z'/%3E%3Cpath d='M130 220 210 90 290 220Z'/%3E%3C/svg%3E") no-repeat center/contain;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 220'%3E%3Cpath d='M0 220 120 30 240 220Z'/%3E%3Cpath d='M130 220 210 90 290 220Z'/%3E%3C/svg%3E") no-repeat center/contain}
+[data-theme=light] .drop::before{background:var(--accent-fg);opacity:.07}
 body.dropping .drop,body.dropping .workspace{background:var(--accent-soft);border-color:var(--accent-fg)}
-.drop p{margin:6px 0 16px;color:var(--muted)}
-.drop .more{font-size:14px;margin:14px 0 0}
+body.dropping .drop{border-style:solid}
+.drop-ic{width:56px;height:56px;border-radius:16px;margin:0 auto 14px;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent-fg);transition:transform .2s var(--ease)}
+.drop-ic svg{width:26px;height:26px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+body.dropping .drop-ic{transform:translateY(-4px)}
+.drop p{margin:6px 0 18px;color:var(--muted)}
 .drop .big{font-size:1.35rem;font-weight:600;letter-spacing:-.02em;color:var(--ink);margin:0}
+.drop .btn.primary{min-height:48px;padding:0 24px;font-size:15px}
+.quick{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px;margin:18px 0 0}
+.quick .ql{font-size:13px;color:var(--muted);margin-right:4px}
+@media (max-width:560px){.quick .ql{flex-basis:100%;text-align:center;margin:0 0 2px}}
+.qchip{appearance:none;font:inherit;font-size:13.5px;font-weight:600;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:999px;min-height:40px;padding:0 14px 0 11px;display:inline-flex;align-items:center;gap:7px;cursor:pointer;touch-action:manipulation;transition:background-color .15s var(--ease),border-color .15s var(--ease)}
+.qchip svg{width:17px;height:17px;fill:none;stroke:var(--accent-fg);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.qchip:hover{background:var(--accent-soft);border-color:var(--accent-line)}
+.qchip:active{background:var(--accent-soft2)}
+.btn.ghost{background:transparent;border-color:transparent;box-shadow:none;color:var(--muted)}
+.btn.ghost:hover:not(:disabled){background:var(--accent-soft);border-color:transparent;color:var(--ink)}
 .chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:20px 0 0;padding:0;list-style:none}
 .chips li{background:var(--accent-soft);color:var(--accent-fg);border-radius:999px;padding:3px 12px;font-size:13px;font-weight:600}
 .workspace{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:14px;box-shadow:var(--shadow)}
@@ -188,14 +204,16 @@ footer a{color:inherit}
 .chkline input{width:18px;height:18px;margin:0;accent-color:var(--accent-fg)}
 .toolhub{margin-top:34px}
 .toolhub h2{margin-top:0}
-.tgroup{margin:28px 0 12px;font-size:14px;font-weight:500;color:var(--muted)}
-.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:16px;list-style:none;margin:0;padding:0}
-.tile{position:relative;width:100%;height:100%;text-align:left;appearance:none;font:inherit;background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:20px;cursor:pointer;display:flex;flex-direction:column;gap:6px;min-height:132px;touch-action:manipulation;color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.12);transition:background-color .15s var(--ease),border-color .15s var(--ease),box-shadow .15s var(--ease)}
+.tgroup{margin:26px 0 10px;font-size:14px;font-weight:600;color:var(--tan)}
+[data-theme=light] .tgroup{color:var(--pill-ink)}
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px;list-style:none;margin:0;padding:0}
+.tile{position:relative;width:100%;height:100%;text-align:left;appearance:none;font:inherit;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:12px 14px;cursor:pointer;display:flex;flex-direction:row;align-items:center;gap:12px;min-height:68px;touch-action:manipulation;color:var(--ink);transition:background-color .15s var(--ease),border-color .15s var(--ease),box-shadow .15s var(--ease)}
 .tile:hover{border-color:var(--accent-line);background:var(--tile-hover);box-shadow:var(--shadow)}
-.tile svg{width:44px;height:44px;padding:10px;margin-bottom:6px;border-radius:12px;background:var(--accent-soft);stroke:var(--accent-fg);fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
-.tile .t{font-weight:600;font-size:16px}
+.tile svg{flex:none;width:42px;height:42px;padding:10px;border-radius:12px;background:var(--accent-soft);stroke:var(--accent-fg);fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.tile .tx{display:flex;flex-direction:column;gap:1px;min-width:0}
+.tile .t{font-weight:600;font-size:15px;line-height:1.25}
 .tile .d{font-size:13px;color:var(--muted);line-height:1.3}
-.tile .pill{position:absolute;top:10px;right:10px}
+.tile .pill{margin-left:auto;flex:none}
 #proDlg{z-index:130}
 .modal .panel.wide{width:min(640px,100%);max-height:calc(100vh - 32px);overflow:auto}
 .plist{margin:10px 0 14px;padding:0;list-style:none;display:grid;gap:8px}
@@ -301,18 +319,15 @@ a.btn{text-decoration:none}
 .ftxt .fn{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px}
 .ftxt .meta{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
 /* theme switch */
-.sw{position:relative;flex:none;width:68px;height:44px;border-radius:999px;border:1px solid var(--line);background:var(--surface);box-shadow:0 1px 2px rgba(0,0,0,.12);cursor:pointer;padding:0;touch-action:manipulation}
-.sw svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-.sw .i{position:absolute;top:13px;color:var(--muted);display:block;line-height:0}
-.sw .i.l{left:11px}.sw .i.r{right:11px}
-.sw .k{position:absolute;top:5px;left:5px;width:32px;height:32px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;transition:transform .2s var(--ease)}
-.sw .k svg{width:16px;height:16px}
+.sw{position:relative;flex:none;width:40px;height:40px;border-radius:50%;border:1px solid transparent;background:transparent;color:var(--muted);cursor:pointer;padding:0;touch-action:manipulation;display:grid;place-items:center;transition:background-color .15s var(--ease),color .15s var(--ease)}
+.sw:hover{background:var(--accent-soft);color:var(--ink)}
+.sw svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.sw .i{display:none}
+.sw .k{display:grid;place-items:center;line-height:0}
 .sw .kl{display:none}
-[data-theme=light] .sw .k{transform:translateX(24px)}
 [data-theme=light] .sw .kd{display:none}[data-theme=light] .sw .kl{display:grid}
-[data-theme=light] .sw .i.r,[data-theme=dark] .sw .i.l,:root:not([data-theme]) .sw .i.l{display:none}
 /* trust row and steps */
-.trust{display:flex;flex-wrap:wrap;justify-content:center;gap:10px 28px;margin:26px 0 32px;padding:0;list-style:none;color:var(--muted);font-size:14px}
+.trust{display:flex;flex-wrap:wrap;justify-content:center;gap:10px 28px;margin:22px 0 8px;padding:0;list-style:none;color:var(--muted);font-size:14px}
 .trust li{display:flex;align-items:center;gap:8px}
 .trust svg{width:16px;height:16px;fill:none;stroke:var(--accent-fg);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;list-style:none;margin:16px 0 0;padding:0}
@@ -320,7 +335,6 @@ a.btn{text-decoration:none}
 .steps .n{width:36px;height:36px;border-radius:50%;background:var(--accent);color:var(--accent-ink);font-weight:600;display:grid;place-items:center;margin-bottom:14px}
 .steps h3{font-size:1.1rem;font-weight:600;margin:0 0 4px;letter-spacing:-.01em}
 .steps p{margin:0;color:var(--muted);font-size:15px;line-height:1.5}
-@media (prefers-reduced-motion:reduce){.sw .k{transition:none}}
 </style>
 </head>
 <body>
@@ -331,22 +345,24 @@ a.btn{text-decoration:none}
 <noscript><p style="margin:0;padding:10px 16px;background:#fff3cd;color:#4a3b00;text-align:center">This PDF editor needs JavaScript. Turn it on in your browser to edit, merge, split, sign and convert PDFs.</p></noscript>
 <header class="top">
   <div class="brand"><svg class="mark" viewBox="0 0 64 64" role="img" aria-label="ASC Software logo"><use href="#asc-badge"/></svg><span><span translate="no">ASC Software</span><small>PDF Tools</small></span></div>
-  <div class="hdr-actions"><span class="privacy">Core tools run on your device</span><span id="proBadge" class="pill" hidden>Pro</span><button type="button" class="sw" id="themeSw" role="switch" aria-checked="false" aria-label="Light mode"><span class="i l"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg></span><span class="i r"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></span><span class="k"><span class="kd"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg></span><span class="kl"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></span></span></button><button type="button" class="btn" id="ledgerlyBtn">Ledgerly</button><button type="button" class="btn primary" id="goPro">Get Pro</button><button type="button" class="btn" id="acctBtn" hidden>Sign in</button></div>
+  <div class="hdr-actions"><span class="privacy">Core tools run on your device</span><span id="proBadge" class="pill" hidden>Pro</span><button type="button" class="sw" id="themeSw" role="switch" aria-checked="false" aria-label="Light mode"><span class="i l"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg></span><span class="i r"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></span><span class="k"><span class="kd"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg></span><span class="kl"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></span></span></button><button type="button" class="btn ghost" id="ledgerlyBtn">Ledgerly</button><button type="button" class="btn primary" id="goPro">Get Pro</button><button type="button" class="btn" id="acctBtn" hidden>Sign in</button></div>
 </header>
 
 <main id="main">
   <div id="libError" class="banner" role="alert" hidden>The PDF engine could not load. Check your connection and refresh the page.</div>
 
   <h1>PDF Editor and Converter<span class="sub">Free, private, no watermark.</span></h1>
-  <p class="lede">Edit, merge, split, sign and convert PDFs online for free, with no sign-up and no watermark. Most work happens on your device, so your documents stay private. An optional free account keeps your uploads so you can reuse them.</p>
+  <p class="lede">Edit, merge, split, sign and convert PDFs online for free, with no sign-up and no watermark. Most work happens on your device, so your documents stay private.</p>
 
   <section id="tool" aria-label="PDF tool">
     <div id="drop" class="drop">
+      <div class="drop-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 16V4M7 9l5-5 5 5M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/></svg></div>
       <p class="big">Drop PDFs or images here</p>
       <p>Add one file to edit it, or several to merge them. Images become PDF pages.</p>
       <button type="button" class="btn primary" id="pick">Choose Files</button>
-      <p class="more">Or pick a specific tool further down the page.</p>
     </div>
+
+    <div class="quick" id="quick" role="group" aria-label="Popular tools"><span class="ql">Or start with a tool</span><span id="quickBtns" style="display:contents"></span></div>
 
     <ul class="trust" id="trust" aria-label="Highlights">
       <li><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>Core tools run on your device</li>
@@ -626,7 +642,7 @@ a.btn{text-decoration:none}
 
 <script>
 (function(){var h=document.documentElement,b=document.getElementById('themeSw');if(!b)return;
-function sync(){var l=h.getAttribute('data-theme')==='light';b.setAttribute('aria-checked',l?'true':'false');var m=document.querySelector('meta[name=theme-color]');if(m)m.setAttribute('content',l?'#f7f8fa':'#121212')}
+function sync(){var l=h.getAttribute('data-theme')==='light';b.setAttribute('aria-checked',l?'true':'false');var m=document.querySelector('meta[name=theme-color]');if(m)m.setAttribute('content',l?'#f5f2e9':'#0e1713')}
 b.addEventListener('click',function(){var t=h.getAttribute('data-theme')==='light'?'dark':'light';h.setAttribute('data-theme',t);try{localStorage.setItem('asc_pdf_theme',t)}catch(e){}sync()});sync()})();
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.0/dist/umd/supabase.js" crossorigin="anonymous"></script>
@@ -783,7 +799,7 @@ const io = new IntersectionObserver(ents => {
 
 function refresh() {
   const has = st.pages.length > 0;
-  $('#drop').hidden = has; $('#workspace').hidden = !has;
+  $('#drop').hidden = has; $('#quick').hidden = has; $('#workspace').hidden = !has;
   if (has) renderGrid(); else window.onbeforeunload = null;
 }
 function renderGrid() {
@@ -2189,7 +2205,8 @@ const TOOLS = [
 function buildTiles() {
   const groups = [...new Set(TOOLS.map(t => t.g))];
   $('#toolGroups').innerHTML = groups.map(g => `<h3 class="tgroup">${esc(g)}</h3><ul class="tiles">` + TOOLS.filter(t => t.g === g).map(t =>
-    `<li><button type="button" class="tile" data-tile="${t.id}"><svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[t.icon]}</svg><span class="t">${esc(t.name)}</span><span class="d">${esc(t.desc)}</span>${t.pro ? '<span class="pill">Pro</span>' : ''}${t.soon ? '<span class="pill">Soon</span>' : ''}</button></li>`).join('') + '</ul>').join('');
+    `<li><button type="button" class="tile" data-tile="${t.id}"><svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[t.icon]}</svg><span class="tx"><span class="t">${esc(t.name)}</span><span class="d">${esc(t.desc)}</span></span>${t.pro ? '<span class="pill">Pro</span>' : ''}${t.soon ? '<span class="pill">Soon</span>' : ''}</button></li>`).join('') + '</ul>').join('');
+  $('#quickBtns').innerHTML = ['merge', 'edit', 'sign', 'split', 'compress', 'pdf2word', 'img2pdf'].map(id => { const t = TOOLS.find(x => x.id === id); return `<button type="button" class="qchip" data-tile="${id}"><svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[t.icon]}</svg>${esc(t.name)}</button>`; }).join('');
 }
 function hint(msg) { const h = $('#hint'); h.textContent = msg || ''; h.hidden = !msg; }
 function scrollToTool() { $('#tool').scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' }); }
@@ -2220,7 +2237,7 @@ function startTool(id) {
   if (id === 'merge' || id === 'img2pdf' || !st.pages.length) { fi.accept = id === 'img2pdf' ? 'image/*' : id === 'merge' ? 'application/pdf,.pdf,image/*' : 'application/pdf,.pdf'; fi.click(); return; }
   runIntent(id);
 }
-$('#toolGroups').addEventListener('click', e => { const b = e.target.closest('[data-tile]'); if (b) startTool(b.dataset.tile); });
+for (const box of [$('#toolGroups'), $('#quick')]) box.addEventListener('click', e => { const b = e.target.closest('[data-tile]'); if (b) startTool(b.dataset.tile); });
 /* ---------- accounts and saved files (Supabase) ---------- */
 const BUCKET = 'pdf-user-files', MAX_SAVED = 20, MAX_SAVED_BYTES = 50 * 1024 * 1024;
 const acct = { user: null, files: [], fresh: false, mode: 'in', auto: true };
