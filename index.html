@@ -1977,6 +1977,41 @@ const AUDIO = { mp3: { mime: 'audio/mpeg', args: br => ['-vn', '-c:a', 'libmp3la
 const audioRun = async (f, v, say) => { const t = AUDIO[v.fmt], name = stem(f.name) + '.' + v.fmt; const data = await ffRun(f, t.args(v.br), name, say); return { name, type: t.mime, data, note: fmtBytes(data.length) }; };
 const BITRATES = [['128', '128 kbps (smaller)'], ['192', '192 kbps (good)'], ['320', '320 kbps (best)']];
 
+/* helpers for the extra PDF, image and video tools */
+const MM = 72 / 25.4;
+const fail = text => Object.assign(new Error('say'), { say: text });
+async function loadPdf(f) {
+  try { return await PDFDocument.load(await f.arrayBuffer()); }
+  catch (e) { throw fail(/encrypt|password/i.test(e.message) ? 'That PDF is password protected. Remove the password first, then try again.' : 'That PDF couldn’t be read. It may be damaged.'); }
+}
+async function openPdfJs(f) { try { return await pdfjsLib.getDocument({ data: new Uint8Array(await f.arrayBuffer()) }).promise; } catch { throw fail('That PDF couldn’t be read. It may be damaged or password protected.'); } }
+const pdfResult = (data, f, suffix, note) => ({ name: stem(f.name) + suffix + '.pdf', type: 'application/pdf', data, note: note || fmtBytes(data.length) });
+const rotOf = p => ((p.getRotation().angle % 360) + 360) % 360;
+const SHEETS = { a4: [595.28, 841.89], a3: [841.89, 1190.55], a5: [419.53, 595.28], letter: [612, 792], legal: [612, 1008] };
+const SHEET_LIST = [['a4', 'A4'], ['letter', 'US Letter'], ['legal', 'US Legal'], ['a3', 'A3'], ['a5', 'A5']];
+// Embeds every page of a PDF. A page with nothing on it has no content to embed, so it comes back as null and is left empty.
+async function embedAll(out, pages) {
+  const has = pages.map(p => !!p.node.Contents()), done = await out.embedPages(pages.filter((p, i) => has[i])); let k = 0;
+  return has.map(h => h ? done[k++] : null);
+}
+// Draws an embedded page inside a box, scaled to fit and centred, keeping the page's own rotation.
+function fitPage(pg, emb, rot, bx, by, bw, bh) {
+  if (!emb) return;
+  const sw = emb.width, sh = emb.height, side = rot === 90 || rot === 270, dw = side ? sh : sw, dh = side ? sw : sh;
+  const s = Math.min(bw / dw, bh / dh), w = sw * s, h = sh * s, ox = bx + (bw - dw * s) / 2, oy = by + (bh - dh * s) / 2;
+  const at = { 0: [ox, oy], 90: [ox, oy + w], 180: [ox + w, oy + h], 270: [ox + h, oy] }[rot];
+  pg.drawPage(emb, { x: at[0], y: at[1], xScale: s, yScale: s, rotate: degrees(-rot) });
+}
+function pixels(c, fn) { const x = c.getContext('2d'), im = x.getImageData(0, 0, c.width, c.height), d = im.data; for (let i = 0; i < d.length; i += 4) fn(d, i); x.putImageData(im, 0, 0); }
+const lumaOf = (d, i) => d[i] * 0.299 + d[i + 1] * 0.587 + d[i + 2] * 0.114;
+function parseTime(s) {
+  s = String(s || '').trim(); if (!s) return null;
+  const p = s.split(':').map(Number); if (p.length > 3 || p.some(n => !isFinite(n) || n < 0)) throw fail('Write times like 90, 1:30 or 0:01:30.');
+  return p.reduce((a, n) => a * 60 + n, 0);
+}
+const IMG_OUT = async (f, c, suffix, note) => { const fmt = fmtFor(f, 'keep'), b = await toBlob(c, FMT[fmt][0], 0.92); if (!b) throw new Error('image'); return { name: stem(f.name) + suffix + '.' + FMT[fmt][1], type: FMT[fmt][0], data: await bytesOf(b), note }; };
+const H264 = ['-c:v', 'libx264', '-preset', 'veryfast', '-crf', '23', '-pix_fmt', 'yuv420p'];
+
 /* what each tool asks for and does */
 const MEDIA = {
   imgcompress: {
@@ -2091,6 +2126,219 @@ const MEDIA = {
       { id: 'br', label: 'Quality', type: 'select', val: '192', list: BITRATES }
     ],
     run: (f, v, say) => audioRun(f, v, say)
+  },
+
+  /* ----- more PDF tools ----- */
+  pdfcrop: {
+    title: 'Crop PDF', accept: 'application/pdf,.pdf', go: 'Crop & Download',
+    lede: 'Trim the margins off every page. Enter how much to cut from each edge. The files stay on your device.',
+    opts: [
+      { id: 'unit', label: 'Measure in', type: 'select', val: 'mm', list: [['mm', 'Millimetres'], ['cm', 'Centimetres'], ['in', 'Inches']] },
+      { id: 'top', label: 'Top', type: 'number', val: '10', min: 0, max: 500 },
+      { id: 'bottom', label: 'Bottom', type: 'number', val: '10', min: 0, max: 500 },
+      { id: 'left', label: 'Left', type: 'number', val: '10', min: 0, max: 500 },
+      { id: 'right', label: 'Right', type: 'number', val: '10', min: 0, max: 500 }
+    ],
+    async run(f, v) {
+      const k = { mm: MM, cm: MM * 10, in: 72 }[v.unit], e = { t: (+v.top || 0) * k, r: (+v.right || 0) * k, b: (+v.bottom || 0) * k, l: (+v.left || 0) * k };
+      if (!e.t && !e.r && !e.b && !e.l) throw fail('Enter how much to trim from at least one edge.');
+      const doc = await loadPdf(f);
+      for (const p of doc.getPages()) {
+        // The numbers are for the page as you see it, so turn them to match any rotated page.
+        const m = { 0: { L: e.l, T: e.t, R: e.r, B: e.b }, 90: { L: e.t, T: e.r, R: e.b, B: e.l }, 180: { L: e.r, T: e.b, R: e.l, B: e.t }, 270: { L: e.b, T: e.l, R: e.t, B: e.r } }[rotOf(p)];
+        const box = p.getCropBox(), w = box.width - m.L - m.R, h = box.height - m.T - m.B;
+        if (w < 36 || h < 36) throw fail('That trims away the whole page. Use smaller numbers.');
+        p.setCropBox(box.x + m.L, box.y + m.B, w, h); p.setMediaBox(box.x + m.L, box.y + m.B, w, h);
+      }
+      const data = await doc.save(); return pdfResult(data, f, '-cropped', `${doc.getPageCount()} pages, ${fmtBytes(data.length)}`);
+    }
+  },
+  pdfsize: {
+    title: 'Change Page Size', accept: 'application/pdf,.pdf', go: 'Resize & Download',
+    lede: 'Fit every page onto A4, Letter or another standard size. The content is scaled to fit and centred, and stays sharp. The files stay on your device.',
+    opts: [
+      { id: 'size', label: 'New page size', type: 'select', val: 'a4', list: SHEET_LIST },
+      { id: 'orient', label: 'Direction', type: 'select', val: 'auto', list: [['auto', 'Match each page'], ['port', 'All portrait'], ['land', 'All landscape']] }
+    ],
+    async run(f, v) {
+      const src = await loadPdf(f), out = await PDFDocument.create(), pages = src.getPages(), embs = await embedAll(out, pages), [a, b] = SHEETS[v.size];
+      pages.forEach((p, i) => {
+        const rot = rotOf(p), side = rot === 90 || rot === 270, land = v.orient === 'land' || (v.orient === 'auto' && (side ? p.getHeight() > p.getWidth() : p.getWidth() > p.getHeight()));
+        const [tw, th] = land ? [b, a] : [a, b], pg = out.addPage([tw, th]); fitPage(pg, embs[i], rot, 0, 0, tw, th);
+      });
+      const data = await out.save(); return pdfResult(data, f, '-' + v.size, `${pages.length} pages, ${fmtBytes(data.length)}`);
+    }
+  },
+  pdfnup: {
+    title: 'Pages per Sheet', accept: 'application/pdf,.pdf', go: 'Combine & Download',
+    lede: 'Put 2, 4, 6 or 9 pages on each sheet to save paper when you print. The files stay on your device.',
+    opts: [
+      { id: 'n', label: 'Pages on each sheet', type: 'select', val: '2', list: [['2', '2 pages'], ['4', '4 pages'], ['6', '6 pages'], ['9', '9 pages']] },
+      { id: 'size', label: 'Sheet size', type: 'select', val: 'a4', list: SHEET_LIST },
+      { id: 'border', label: 'Draw a thin border around each page', type: 'check', val: true }
+    ],
+    async run(f, v) {
+      const [cols, rows, land] = { 2: [2, 1, true], 4: [2, 2, false], 6: [3, 2, true], 9: [3, 3, false] }[v.n], per = cols * rows, [a, b] = SHEETS[v.size], [W, H] = land ? [b, a] : [a, b];
+      const src = await loadPdf(f), out = await PDFDocument.create(), pages = src.getPages(), embs = await embedAll(out, pages), M = 18, G = 10;
+      const cw = (W - 2 * M - (cols - 1) * G) / cols, ch = (H - 2 * M - (rows - 1) * G) / rows; let sheet = null;
+      pages.forEach((p, i) => {
+        const k = i % per; if (!k) sheet = out.addPage([W, H]);
+        const x = M + (k % cols) * (cw + G), y = H - M - (Math.floor(k / cols) + 1) * ch - Math.floor(k / cols) * G;
+        fitPage(sheet, embs[i], rotOf(p), x, y, cw, ch);
+        if (v.border) sheet.drawRectangle({ x, y, width: cw, height: ch, borderWidth: 0.5, borderColor: rgb(0.65, 0.65, 0.65) });
+      });
+      const data = await out.save(); return pdfResult(data, f, `-${v.n}-per-sheet`, `${pages.length} pages on ${Math.ceil(pages.length / per)} sheets`);
+    }
+  },
+  pdfreverse: {
+    title: 'Reverse Pages', accept: 'application/pdf,.pdf', go: 'Reverse & Download',
+    lede: 'Flip the page order so the last page comes first. Handy for scans that came out backwards. The files stay on your device.',
+    opts: [],
+    async run(f) {
+      const doc = await loadPdf(f), n = doc.getPageCount(); if (n < 2) throw fail('That PDF has only one page, so there is nothing to reverse.');
+      const out = await PDFDocument.create(), pages = await out.copyPages(doc, [...Array(n).keys()].reverse()); pages.forEach(p => out.addPage(p));
+      const data = await out.save(); return pdfResult(data, f, '-reversed', `${n} pages, ${fmtBytes(data.length)}`);
+    }
+  },
+  pdfblank: {
+    title: 'Remove Blank Pages', accept: 'application/pdf,.pdf', go: 'Remove & Download',
+    lede: 'Finds pages with nothing on them and takes them out. Useful for double-sided scans. The files stay on your device.',
+    opts: [{ id: 'sens', label: 'What counts as blank', type: 'select', val: '0.001', list: [['0.0001', 'Only completely empty pages'], ['0.001', 'Also pages with specks or scanner noise'], ['0.005', 'Also pages with just a page number']] }],
+    async run(f, v, say) {
+      const doc = await loadPdf(f), pdf = await openPdfJs(f), n = pdf.numPages, blank = [];
+      for (let i = 1; i <= n; i++) {
+        say(`Checking page ${i} of ${n}…`);
+        const pg = await pdf.getPage(i), c = await renderPageCanvas(pg, 0.5); let ink = 0;
+        pixels(c, (d, j) => { if (lumaOf(d, j) < 235) ink++; });
+        if (ink / (c.width * c.height) <= +v.sens) blank.push(i); c.width = c.height = 0; pg.cleanup();
+      }
+      if (!blank.length) return { name: f.name, type: 'application/pdf', data: new Uint8Array(await f.arrayBuffer()), note: 'No blank pages found, so the file is unchanged.' };
+      if (blank.length === n) throw fail('Every page looks blank. Pick a stricter option, or check the file.');
+      [...blank].reverse().forEach(i => doc.removePage(i - 1));
+      const data = await doc.save(); return pdfResult(data, f, '-no-blanks', `Removed ${blank.length} blank ${blank.length === 1 ? 'page' : 'pages'} (${blank.join(', ')})`);
+    }
+  },
+  pdfgray: {
+    title: 'Grayscale PDF', accept: 'application/pdf,.pdf', go: 'Convert & Download', slow: true,
+    lede: 'Turn a colour PDF into grayscale, or into pure black and white, to save ink. Each page becomes an image, so the text can no longer be selected. The files stay on your device.',
+    opts: [
+      { id: 'mode', label: 'Make it', type: 'select', val: 'gray', list: [['gray', 'Grayscale'], ['bw', 'Black and white']] },
+      { id: 'dpi', label: 'Sharpness', type: 'select', val: '120', list: [['96', 'Standard (smaller file)'], ['120', 'Good'], ['170', 'Sharp (larger file)']] }
+    ],
+    async run(f, v, say) {
+      const pdf = await openPdfJs(f), n = pdf.numPages, out = await PDFDocument.create(), bw = v.mode === 'bw';
+      for (let i = 1; i <= n; i++) {
+        say(`Page ${i} of ${n}…`);
+        const pg = await pdf.getPage(i), size = pg.getViewport({ scale: 1 }), c = await renderPageCanvas(pg, +v.dpi / 72);
+        pixels(c, (d, j) => { let g = lumaOf(d, j); if (bw) g = g < 140 ? 0 : 255; d[j] = d[j + 1] = d[j + 2] = g; });
+        const blob = await toBlob(c, bw ? 'image/png' : 'image/jpeg', 0.8), img = bw ? await out.embedPng(await bytesOf(blob)) : await out.embedJpg(await bytesOf(blob));
+        out.addPage([size.width, size.height]).drawImage(img, { x: 0, y: 0, width: size.width, height: size.height }); c.width = c.height = 0; pg.cleanup();
+      }
+      const data = await out.save(); return pdfResult(data, f, bw ? '-black-white' : '-gray', sizeNote(f.size, data.length));
+    }
+  },
+  pdfinfo: {
+    title: 'Edit PDF Info', accept: 'application/pdf,.pdf', go: 'Save & Download',
+    lede: 'Set the title, author and other details stored inside a PDF, or wipe them before you share it. Leave a box empty to keep what is already there. The files stay on your device.',
+    opts: [
+      { id: 'title', label: 'Title', type: 'text' }, { id: 'author', label: 'Author', type: 'text' },
+      { id: 'subject', label: 'Subject', type: 'text' }, { id: 'keywords', label: 'Keywords (separate with commas)', type: 'text' },
+      { id: 'clear', label: 'Remove the existing info first (author, title, software and so on)', type: 'check', val: false }
+    ],
+    async run(f, v) {
+      const t = k => String(v[k] || '').trim();
+      if (!v.clear && !t('title') && !t('author') && !t('subject') && !t('keywords')) throw fail('Fill in at least one box, or tick Remove the existing info.');
+      const doc = await loadPdf(f);
+      if (v.clear) { doc.setTitle(''); doc.setAuthor(''); doc.setSubject(''); doc.setKeywords([]); doc.setCreator(''); doc.setProducer(''); }
+      if (t('title')) doc.setTitle(t('title')); if (t('author')) doc.setAuthor(t('author')); if (t('subject')) doc.setSubject(t('subject'));
+      if (t('keywords')) doc.setKeywords(t('keywords').split(',').map(s => s.trim()).filter(Boolean));
+      const data = await doc.save({ updateMetadata: false }); return pdfResult(data, f, '-info', v.clear ? 'Existing info removed' : 'Info updated');
+    }
+  },
+
+  /* ----- more image tools ----- */
+  imgflip: {
+    title: 'Rotate & Flip Image', accept: 'image/*', go: 'Apply & Download', image: true,
+    lede: 'Turn a picture or mirror it. The files stay on your device.',
+    opts: [{ id: 'act', label: 'What to do', type: 'select', val: 'r90', list: [['r90', 'Rotate right (90°)'], ['l90', 'Rotate left (90°)'], ['r180', 'Turn upside down (180°)'], ['fh', 'Flip left to right'], ['fv', 'Flip top to bottom']] }],
+    async run(f, v) {
+      const bmp = await loadBitmap(f), W = bmp.width, H = bmp.height, turn = v.act === 'r90' || v.act === 'l90', c = document.createElement('canvas'); c.width = turn ? H : W; c.height = turn ? W : H;
+      const x = c.getContext('2d'); if (fmtFor(f, 'keep') === 'jpg') { x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height); }
+      if (v.act === 'r90') { x.translate(H, 0); x.rotate(Math.PI / 2); } else if (v.act === 'l90') { x.translate(0, W); x.rotate(-Math.PI / 2); }
+      else if (v.act === 'r180') { x.translate(W, H); x.rotate(Math.PI); } else if (v.act === 'fh') { x.translate(W, 0); x.scale(-1, 1); } else { x.translate(0, H); x.scale(1, -1); }
+      x.drawImage(bmp, 0, 0); return IMG_OUT(f, c, '-edited', `${c.width} x ${c.height} px`);
+    }
+  },
+  imgcrop: {
+    title: 'Crop Image', accept: 'image/*', go: 'Crop & Download', image: true,
+    lede: 'Cut a picture to a standard shape, such as a square for Instagram or 16:9 for a video thumbnail. The files stay on your device.',
+    opts: [
+      { id: 'ratio', label: 'Shape', type: 'select', val: '1:1', list: [['1:1', 'Square (1:1)'], ['4:5', 'Portrait post (4:5)'], ['9:16', 'Story or Reel (9:16)'], ['4:3', 'Photo (4:3)'], ['3:2', 'Camera photo (3:2)'], ['16:9', 'Widescreen (16:9)'], ['3:1', 'Banner (3:1)']] },
+      { id: 'pos', label: 'Keep the', type: 'select', val: 'c', list: [['c', 'Middle'], ['s', 'Top or left'], ['e', 'Bottom or right']] }
+    ],
+    async run(f, v) {
+      const bmp = await loadBitmap(f), W = bmp.width, H = bmp.height, [rw, rh] = v.ratio.split(':').map(Number), want = rw / rh; let cw = W, ch = H;
+      if (W / H > want) cw = Math.round(H * want); else ch = Math.round(W / want);
+      const k = { c: 0.5, s: 0, e: 1 }[v.pos], sx = Math.round((W - cw) * k), sy = Math.round((H - ch) * k), c = document.createElement('canvas'); c.width = cw; c.height = ch;
+      const x = c.getContext('2d'); if (fmtFor(f, 'keep') === 'jpg') { x.fillStyle = '#fff'; x.fillRect(0, 0, cw, ch); } x.drawImage(bmp, sx, sy, cw, ch, 0, 0, cw, ch);
+      return IMG_OUT(f, c, '-' + v.ratio.replace(':', 'x'), `${W} x ${H} to ${cw} x ${ch} px`);
+    }
+  },
+  imgfilter: {
+    title: 'Image Filters', accept: 'image/*', go: 'Apply & Download', image: true,
+    lede: 'Make a photo black and white, give it an old-photo tint, or invert the colours. The files stay on your device.',
+    opts: [{ id: 'look', label: 'Look', type: 'select', val: 'gray', list: [['gray', 'Black and white'], ['sepia', 'Sepia (old photo)'], ['thresh', 'High contrast (pure black and white)'], ['invert', 'Invert colours']] }],
+    async run(f, v) {
+      const bmp = await loadBitmap(f), c = drawn(bmp, bmp.width, bmp.height, fmtFor(f, 'keep') === 'jpg');
+      pixels(c, (d, i) => {
+        const r = d[i], g = d[i + 1], b = d[i + 2];
+        if (v.look === 'gray') d[i] = d[i + 1] = d[i + 2] = lumaOf(d, i);
+        else if (v.look === 'thresh') d[i] = d[i + 1] = d[i + 2] = lumaOf(d, i) < 128 ? 0 : 255;
+        else if (v.look === 'invert') { d[i] = 255 - r; d[i + 1] = 255 - g; d[i + 2] = 255 - b; }
+        else { d[i] = 0.393 * r + 0.769 * g + 0.189 * b; d[i + 1] = 0.349 * r + 0.686 * g + 0.168 * b; d[i + 2] = 0.272 * r + 0.534 * g + 0.131 * b; }
+      });
+      return IMG_OUT(f, c, '-' + v.look, `${c.width} x ${c.height} px`);
+    }
+  },
+
+  /* ----- more video tools ----- */
+  vidtrim: {
+    title: 'Trim Video', accept: 'video/*,.mp4,.mov,.mkv,.webm,.avi,.m4v', go: 'Trim & Download', slow: true,
+    lede: 'Cut a clip down to the part you want and save it as MP4. Write times like 90, 1:30 or 0:01:30. It runs on your device, so keep this tab open.',
+    opts: [
+      { id: 'start', label: 'Start at', type: 'text', ph: '0:00' },
+      { id: 'end', label: 'End at', type: 'text', ph: 'Leave empty for the end' }
+    ],
+    async run(f, v, say) {
+      const s = parseTime(v.start) || 0, e = parseTime(v.end); if (e !== null && e <= s) throw fail('The end time has to come after the start time.');
+      const name = stem(f.name) + '-trimmed.mp4', data = await ffRun(f, ['-ss', String(s), ...(e !== null ? ['-to', String(e)] : []), '-vf', 'scale=trunc(iw/2)*2:trunc(ih/2)*2', ...H264, '-c:a', 'aac', '-b:a', '128k', '-movflags', '+faststart'], name, say);
+      return { name, type: 'video/mp4', data, note: fmtBytes(data.length) };
+    }
+  },
+  vid2gif: {
+    title: 'Video to GIF', accept: 'video/*,.mp4,.mov,.mkv,.webm,.avi,.m4v', go: 'Make GIF', slow: true, image: true,
+    lede: 'Turn a short part of a video into an animated GIF. GIFs get big quickly, so keep clips short. It runs on your device, so keep this tab open.',
+    opts: [
+      { id: 'start', label: 'Start at', type: 'text', ph: '0:00' },
+      { id: 'len', label: 'Length', type: 'select', val: '5', list: [['3', '3 seconds'], ['5', '5 seconds'], ['8', '8 seconds'], ['12', '12 seconds']] },
+      { id: 'w', label: 'Width', type: 'select', val: '480', list: [['320', '320 px (small)'], ['480', '480 px'], ['640', '640 px (large)']] },
+      { id: 'fps', label: 'Smoothness', type: 'select', val: '12', list: [['8', '8 frames a second'], ['12', '12 frames a second'], ['15', '15 frames a second']] }
+    ],
+    async run(f, v, say) {
+      const s = parseTime(v.start) || 0, name = stem(f.name) + '.gif';
+      const data = await ffRun(f, ['-ss', String(s), '-t', v.len, '-vf', `fps=${+v.fps},scale=${+v.w}:-1:flags=lanczos,split[a][b];[a]palettegen[p];[b][p]paletteuse`, '-loop', '0'], name, say);
+      return { name, type: 'image/gif', data, note: fmtBytes(data.length) };
+    }
+  },
+  vidmute: {
+    title: 'Remove Sound from Video', accept: 'video/*,.mp4,.mov,.mkv,.webm,.avi,.m4v', go: 'Remove Sound', slow: true,
+    lede: 'Strip the audio track and keep the picture. For most MP4 and MOV files it is quick and loses no quality. It runs on your device.',
+    opts: [],
+    async run(f, v, say) {
+      const copy = /\.(mp4|mov|m4v)$/i.test(f.name), name = stem(f.name) + '-muted.mp4';
+      const data = await ffRun(f, copy ? ['-c:v', 'copy', '-an', '-movflags', '+faststart'] : [...H264, '-an', '-movflags', '+faststart'], name, say);
+      return { name, type: 'video/mp4', data, note: fmtBytes(data.length) };
+    }
   }
 };
 
@@ -2146,7 +2394,7 @@ $('#mtGo').onclick = async () => {
     else { await saveBlob(makeZip(out), 'converted.zip'); msg.textContent = `Saved ${out.length} files in converted.zip.`; }
   } catch (err) {
     console.error(err);
-    msg.textContent = err.message === 'size' ? 'Enter a width or a height first.' : err.message === 'image' ? 'That picture couldn’t be read. It may be damaged or in a format this browser can’t open.' : err.message === 'lib' ? 'Couldn’t load the helper this tool needs. Check your connection and try again.' : T.slow ? 'That file couldn’t be converted. It may be damaged or in a format this tool can’t read. Very large files can also run out of memory.' : 'That didn’t work. Please try another file.';
+    msg.textContent = err.say ? err.say : err.message === 'size' ? 'Enter a width or a height first.' : err.message === 'image' ? 'That picture couldn’t be read. It may be damaged or in a format this browser can’t open.' : err.message === 'lib' ? 'Couldn’t load the helper this tool needs. Check your connection and try again.' : T.slow ? 'That file couldn’t be converted. It may be damaged or in a format this tool can’t read. Very large files can also run out of memory.' : 'That didn’t work. Please try another file.';
   } finally { mt.busy = false; mtRender(); }
 };
 
@@ -2172,18 +2420,37 @@ const ICONS = {
   wand: '<path d="m5 19 9-9M14 4l.8 1.7 1.7.8-1.7.8L14 9l-.8-1.7-1.7-.8 1.7-.8zM19 11l.6 1.2 1.2.6-1.2.6L19 15l-.6-1.2-1.2-.6 1.2-.6z"/>',
   qr: '<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM20 14v.01M14 20h3M20 17v4"/>',
   video: '<rect x="3" y="6" width="13" height="12" rx="2"/><path d="m16 10 5-3v10l-5-3z"/>',
-  audio: '<path d="M9 18V6l10-2v12"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="16.5" cy="16" r="2.5"/>'
+  audio: '<path d="M9 18V6l10-2v12"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="16.5" cy="16" r="2.5"/>',
+  crop: '<path d="M6 2v14a2 2 0 0 0 2 2h14M2 6h14a2 2 0 0 1 2 2v14"/>',
+  pagesize: '<path d="M4 9V4h5M20 15v5h-5"/><rect x="8" y="8" width="8" height="8" rx="1"/>',
+  nup: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M12 4v16M3 12h18"/>',
+  reverse: '<path d="M7 4v14M7 18l-3-3M7 18l3-3M17 20V6M17 6l-3 3M17 6l3 3"/>',
+  info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8v.01"/>',
+  gray: '<circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 0 18z" style="fill:var(--accent-fg)"/>',
+  blank: '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9.5 12.5l5 5M14.5 12.5l-5 5"/>',
+  flip: '<path d="M12 3v18M8 7 3 12l5 5V7zM16 7l5 5-5 5V7z"/>',
+  filter: '<circle cx="9" cy="9" r="5"/><circle cx="15" cy="9" r="5"/><circle cx="12" cy="15" r="5"/>',
+  trim: '<rect x="3" y="6" width="18" height="12" rx="2"/><path d="M8 6v12M16 6v12"/>',
+  gif: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M10 9.5v5l4-2.5z"/>',
+  mute: '<path d="M11 5 6 9H3v6h3l5 4zM16 9l5 6M21 9l-5 6"/>'
 };
 const TOOLS = [
   { g: 'Organize', id: 'merge', icon: 'merge', name: 'Merge PDF', desc: 'Combine files into one' },
   { g: 'Organize', id: 'split', icon: 'split', name: 'Split PDF', desc: 'Extract or separate pages' },
   { g: 'Organize', id: 'rotate', icon: 'rotate', name: 'Rotate PDF', desc: 'Fix sideways pages' },
   { g: 'Organize', id: 'organize', icon: 'organize', name: 'Organize Pages', desc: 'Reorder, duplicate, delete' },
+  { g: 'Organize', id: 'pdfreverse', icon: 'reverse', name: 'Reverse Pages', desc: 'Last page first' },
+  { g: 'Organize', id: 'pdfblank', icon: 'blank', name: 'Remove Blank Pages', desc: 'Clean up scans' },
   { g: 'Edit & Sign', id: 'edit', icon: 'edit', name: 'Edit PDF', desc: 'Text, highlight, whiteout' },
   { g: 'Edit & Sign', id: 'sign', icon: 'sign', name: 'Sign PDF', desc: 'Draw and place a signature' },
   { g: 'Edit & Sign', id: 'pagenums', icon: 'pagenum', name: 'Page Numbers', desc: 'Number every page', pro: 'pagenums' },
   { g: 'Edit & Sign', id: 'watermark', icon: 'watermark', name: 'Watermark', desc: 'Stamp text across pages', pro: 'watermark' },
+  { g: 'Edit & Sign', id: 'pdfinfo', icon: 'info', name: 'Edit PDF Info', desc: 'Title, author, keywords' },
+  { g: 'Page Layout', id: 'pdfcrop', icon: 'crop', name: 'Crop PDF', desc: 'Trim the margins' },
+  { g: 'Page Layout', id: 'pdfsize', icon: 'pagesize', name: 'Change Page Size', desc: 'A4, Letter and more' },
+  { g: 'Page Layout', id: 'pdfnup', icon: 'nup', name: 'Pages per Sheet', desc: '2, 4, 6 or 9 to print' },
   { g: 'Optimize', id: 'compress', icon: 'compress', name: 'Compress PDF', desc: 'Shrink the file size' },
+  { g: 'Optimize', id: 'pdfgray', icon: 'gray', name: 'Grayscale PDF', desc: 'Save ink when printing' },
   { g: 'Convert', id: 'img2pdf', icon: 'image', name: 'JPG to PDF', desc: 'Images become pages' },
   { g: 'Convert', id: 'pdf2img', icon: 'image', name: 'PDF to JPG', desc: 'Every page as an image' },
   { g: 'Convert', id: 'pdf2txt', icon: 'text', name: 'PDF to Text', desc: 'Pull out the text' },
@@ -2197,8 +2464,14 @@ const TOOLS = [
   { g: 'Images', id: 'imgresize', icon: 'resize', name: 'Resize Image', desc: 'Set a new size' },
   { g: 'Images', id: 'heic2jpg', icon: 'image', name: 'HEIC to JPG', desc: 'iPhone photos to JPG' },
   { g: 'Images', id: 'bgremove', icon: 'wand', name: 'Remove Background', desc: 'Cut out the subject' },
+  { g: 'Images', id: 'imgflip', icon: 'flip', name: 'Rotate & Flip Image', desc: 'Turn or mirror a photo' },
+  { g: 'Images', id: 'imgcrop', icon: 'crop', name: 'Crop Image', desc: 'Square, 16:9 and more' },
+  { g: 'Images', id: 'imgfilter', icon: 'filter', name: 'Image Filters', desc: 'Black and white, sepia' },
   { g: 'Create', id: 'qr', icon: 'qr', name: 'QR Code Generator', desc: 'Links, Wi-Fi, WhatsApp' },
   { g: 'Audio & Video', id: 'vidcompress', icon: 'video', name: 'Compress Video', desc: 'Smaller MP4 files' },
+  { g: 'Audio & Video', id: 'vidtrim', icon: 'trim', name: 'Trim Video', desc: 'Cut to the part you want' },
+  { g: 'Audio & Video', id: 'vid2gif', icon: 'gif', name: 'Video to GIF', desc: 'Short animated clips' },
+  { g: 'Audio & Video', id: 'vidmute', icon: 'mute', name: 'Remove Sound', desc: 'Keep the picture only' },
   { g: 'Audio & Video', id: 'vid2mp3', icon: 'audio', name: 'Video to MP3', desc: 'Pull out the sound' },
   { g: 'Audio & Video', id: 'audioconv', icon: 'audio', name: 'Audio Converter', desc: 'MP3, M4A, OGG, WAV' }
 ];
