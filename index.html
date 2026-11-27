@@ -155,8 +155,8 @@ footer a{color:inherit}
 .toast button:focus-visible{outline-color:#9be3c4}
 /* editor */
 .editor{position:fixed;inset:0;background:var(--editor-bg);z-index:50;display:flex;flex-direction:column}
-.ed-stage{flex:1;overflow:auto;overscroll-behavior:contain;padding:16px 12px 40px}
-.pagebox{position:relative;margin:0 auto;background:#fff;box-shadow:0 2px 14px rgba(0,0,0,.25)}
+.ed-stage{position:relative;flex:1;overflow:auto;overscroll-behavior:contain;padding:16px 12px 40px}
+.pagebox{position:relative;margin:0 auto 16px;background:#fff;box-shadow:0 2px 14px rgba(0,0,0,.25)}
 .pagebox canvas{position:absolute;inset:0;width:100%;height:100%}
 .overlay{position:absolute;inset:0;overflow:hidden}
 .overlay.tool-text{cursor:text}
@@ -470,9 +470,7 @@ a.btn{text-decoration:none}
       <button type="button" class="tbtn" id="edNext" aria-label="Next page"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button>
     </div>
   </div>
-  <div class="ed-stage" id="edStage">
-    <div class="pagebox" id="pageBox"><canvas id="edCanvas" aria-label="Page preview"></canvas><div class="overlay" id="overlay"></div></div>
-  </div>
+  <div class="ed-stage" id="edStage"></div>
   <p class="sr" id="edHelp">Drag items to move them. With an item focused, use the arrow keys to nudge, Enter to edit text and Delete to remove it.</p>
 </div>
 
@@ -484,6 +482,7 @@ a.btn{text-decoration:none}
     <div class="sigrow" id="sigTypeRow" hidden><label class="field">Your name<input id="sigText" type="text" maxlength="40" autocomplete="off" spellcheck="false"></label><label class="field">Style<select id="sigFont"><option value="script">Script</option><option value="hand">Handwriting</option><option value="formal">Formal italic</option></select></label></div>
     <div class="sigrow" id="sigUpRow" hidden><button type="button" class="btn" id="sigUpBtn">Choose a picture</button><input type="file" id="sigUpIn" accept="image/*" hidden><p class="msg" style="margin:0;flex:1 1 200px">A photo or scan of your signature on white paper works. The white is removed.</p></div>
     <canvas id="sigPad" class="sigpad" width="960" height="360" aria-label="Signature drawing area"></canvas>
+    <p class="msg" id="sigSaved" style="margin:0 0 6px" hidden>Your saved signature is ready. Choose Add Signature to use it, or Clear to draw a new one.</p>
     <div class="row">
       <button type="button" class="btn" id="sigClear">Clear</button>
       <button type="button" class="btn" id="sigCancel">Cancel</button>
@@ -1037,30 +1036,71 @@ $('#dl').onclick = () => exportPages(st.pages);
 $('#dlSel').onclick = () => exportPages(st.pages.filter(p => p.selected));
 
 /* ---------- editor ---------- */
-const E = { box: $('#pageBox'), canvas: $('#edCanvas'), ov: $('#overlay'), fs: $('#fs'), tc: $('#tc') };
-let lastFocus = null;
+// Every page is laid out in one scrolling column. E.ov and ed.k always point at the "current" page:
+// the one the person last touched, or the one in the middle of the screen while scrolling.
+const E = { stage: $('#edStage'), ov: null, fs: $('#fs'), tc: $('#tc') };
+let lastFocus = null, edViews = new Map(), edObs = null;
 
 async function openEditor(p, opener) {
   lastFocus = opener || document.activeElement;
   ed = { p, tool: 'select', sel: null, k: 1 };
   $('#main').inert = true; $('header.top').inert = true; $('#editor').hidden = false; document.body.style.overflow = 'hidden';
-  setTool('select'); await layoutEditor(); $('#edDone').focus();
+  layoutEditor(); setTool('select'); scrollToPage(p, 'auto'); $('#edDone').focus();
 }
 function closeEditor() {
   if (!ed) return; ed = null;
+  if (edObs) { edObs.disconnect(); edObs = null; }
+  edViews.clear(); E.stage.textContent = ''; E.ov = null;
   $('#editor').hidden = true; $('#main').inert = false; $('header.top').inert = false; document.body.style.overflow = '';
   renderGrid(); if (lastFocus && document.contains(lastFocus)) lastFocus.focus();
 }
-async function layoutEditor() {
-  const p = ed.p, ds = dispSize(p), i = st.pages.indexOf(p);
+function setCur(p) {
+  const v = edViews.get(p); if (!v) return;
+  ed.p = p; ed.k = v.k; E.ov = v.ov;
+  const i = st.pages.indexOf(p);
   $('#edTitle').textContent = `Page ${i + 1} of ${st.pages.length}`;
   $('#edPrev').disabled = i === 0; $('#edNext').disabled = i === st.pages.length - 1;
-  ed.cssW = Math.max(240, Math.min(920, window.innerWidth - 24)); ed.k = ed.cssW / ds.w;
-  E.box.style.width = ed.cssW + 'px'; E.box.style.height = ds.h * ed.k + 'px';
-  select(null); renderAnnots();
-  await drawPage(p, E.canvas, ed.cssW);
 }
-function go(delta) { const i = st.pages.indexOf(ed.p) + delta; if (i < 0 || i >= st.pages.length) return; ed.p = st.pages[i]; layoutEditor(); $('#edStage').scrollTop = 0; }
+function layoutEditor() {
+  if (edObs) edObs.disconnect();
+  edViews.clear(); E.stage.textContent = '';
+  const cssW = ed.cssW = Math.max(240, Math.min(920, window.innerWidth - 24));
+  // pages are drawn only while near the screen, and let go of when far away, so long documents stay light
+  edObs = new IntersectionObserver(entries => entries.forEach(en => {
+    const v = en.target._view; if (!v) return;
+    if (en.isIntersecting) { if (!v.drawn) { v.drawn = true; drawPage(v.p, v.canvas, cssW); } }
+    else if (v.drawn) { v.drawn = false; v.canvas._tok = (v.canvas._tok || 0) + 1; v.canvas.width = v.canvas.height = 0; }
+  }), { root: E.stage, rootMargin: '1200px 0px' });
+  st.pages.forEach((p, i) => {
+    const ds = dispSize(p), k = cssW / ds.w;
+    const box = document.createElement('div'); box.className = 'pagebox';
+    box.style.width = cssW + 'px'; box.style.height = ds.h * k + 'px';
+    const canvas = document.createElement('canvas'); canvas.setAttribute('aria-label', `Page ${i + 1} preview`);
+    const ov = document.createElement('div'); ov.className = 'overlay tool-' + ed.tool;
+    ov.addEventListener('pointerdown', e => { setCur(p); ovDown(e); });
+    box.append(canvas, ov); E.stage.append(box);
+    const v = { p, box, canvas, ov, k, drawn: false }; box._view = v; edViews.set(p, v);
+    setCur(p); p.annots.forEach(buildEl);
+    edObs.observe(box);
+  });
+  if (!st.pages.includes(ed.p)) ed.p = st.pages[0];
+  setCur(ed.p); select(null);
+}
+function scrollToPage(p, behavior = 'smooth') {
+  const v = edViews.get(p); if (!v) return;
+  E.stage.scrollTo({ top: v.box.offsetTop - 16, behavior }); setCur(p);
+}
+// while scrolling, the page across the middle of the screen becomes the current page
+let edScrollRaf = 0;
+E.stage.addEventListener('scroll', () => {
+  if (!ed || edScrollRaf || document.body.classList.contains('dragging')) return;
+  edScrollRaf = requestAnimationFrame(() => {
+    edScrollRaf = 0; if (!ed) return;
+    const mid = E.stage.scrollTop + E.stage.clientHeight / 2;
+    for (const v of edViews.values()) if (v.box.offsetTop + v.box.offsetHeight + 8 >= mid) { if (v.p !== ed.p) setCur(v.p); break; }
+  });
+}, { passive: true });
+function go(delta) { const i = st.pages.indexOf(ed.p) + delta; if (i < 0 || i >= st.pages.length) return; scrollToPage(st.pages[i]); }
 $('#edPrev').onclick = () => go(-1); $('#edNext').onclick = () => go(1); $('#edDone').onclick = closeEditor;
 // Swipe left or right on the page to change page. Only with the Select tool, one finger, and never on an item you could be dragging.
 {
@@ -1077,25 +1117,28 @@ $('#edPrev').onclick = () => go(-1); $('#edNext').onclick = () => go(1); $('#edD
   }, { passive: true });
   stage.addEventListener('touchcancel', () => { s = null; }, { passive: true });
 }
-window.addEventListener('resize', () => { if (ed) layoutEditor(); });
+let edResizeT = 0;
+window.addEventListener('resize', () => {
+  if (!ed) return; clearTimeout(edResizeT);
+  edResizeT = setTimeout(() => { if (!ed) return; const p = ed.p; layoutEditor(); setTool(ed.tool); scrollToPage(p, 'auto'); }, 150);
+});
 
 function setTool(t) {
   ed.tool = t; $$('[data-tool]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.tool === t)));
-  E.ov.className = 'overlay tool-' + t;
+  for (const v of edViews.values()) v.ov.className = 'overlay tool-' + t;
 }
 $$('[data-tool]').forEach(b => b.onclick = () => setTool(b.dataset.tool));
 
-function renderAnnots() { E.ov.textContent = ''; ed.p.annots.forEach(buildEl); }
 function placeEl(a) {
-  const k = ed.k, d = a.el;
+  const d = a.el, k = d._k;
   d.style.left = a.px * k + 'px'; d.style.top = a.py * k + 'px'; d.style.transform = `rotate(${a.a}deg)`;
   if (a.type === 'text') d.style.fontSize = a.size * k + 'px';
   else { d.style.width = a.w * k + 'px'; d.style.height = a.h * k + 'px'; }
 }
-function measure(a) { if (a.type === 'text') { a.w = a.el.offsetWidth / ed.k; a.h = a.el.offsetHeight / ed.k; } }
+function measure(a) { if (a.type === 'text') { a.w = a.el.offsetWidth / a.el._k; a.h = a.el.offsetHeight / a.el._k; } }
 function labelFor(a) { return a.type === 'text' ? `Text: ${a.text || 'empty'}` : a.type === 'image' ? 'Image or signature' : a.type === 'highlight' ? 'Highlight' : 'Whiteout box'; }
 function buildEl(a) {
-  const d = document.createElement('div'); a.el = d;
+  const d = document.createElement('div'), pg = ed.p; a.el = d; d._k = ed.k;
   d.className = 'ann ' + a.type; d.tabIndex = 0; d.setAttribute('role', 'group'); d.setAttribute('aria-label', labelFor(a)); d.setAttribute('aria-describedby', 'edHelp');
   if (a.type === 'text') { d.textContent = a.text; d.style.color = a.color; }
   else if (a.type === 'image') { const im = document.createElement('img'); im.src = a.data.url; im.alt = ''; im.width = 100; im.height = 40; d.append(im); }
@@ -1103,7 +1146,7 @@ function buildEl(a) {
   E.ov.append(d); placeEl(a); if (a.type === 'text') measure(a);
   d.addEventListener('pointerdown', e => {
     if (d.classList.contains('editing')) return;
-    e.stopPropagation(); e.preventDefault(); d.focus({ preventScroll: true }); select(a);
+    e.stopPropagation(); e.preventDefault(); setCur(pg); d.focus({ preventScroll: true }); select(a);
     (e.target.classList.contains('hnd') ? startResize : startMove)(a, e);
   });
   d.addEventListener('dblclick', () => { if (a.type === 'text') startEdit(a); });
@@ -1118,14 +1161,14 @@ function buildEl(a) {
       placeEl(a);
     }
   });
-  d.addEventListener('focus', () => { if (ed && ed.sel !== a) select(a); });
+  d.addEventListener('focus', () => { if (ed && ed.sel !== a) { setCur(pg); select(a); } });
 }
 function select(a) {
   if (!ed) return; if (ed.sel && ed.sel.el) ed.sel.el.classList.remove('sel');
   ed.sel = a; if (a) { a.el.classList.add('sel'); if (a.type === 'text') { E.fs.value = a.size; E.tc.value = a.color; } }
   $('#edDel').disabled = !a;
 }
-function removeAnnot(a) { const L = ed.p.annots, i = L.indexOf(a); if (i >= 0) L.splice(i, 1); a.el.remove(); if (ed.sel === a) select(null); }
+function removeAnnot(a) { const L = (st.pages.find(p => p.annots.includes(a)) || ed.p).annots, i = L.indexOf(a); if (i >= 0) L.splice(i, 1); a.el.remove(); if (ed.sel === a) select(null); }
 $('#edDel').onclick = () => { if (ed.sel) removeAnnot(ed.sel); };
 
 function startEdit(a) {
@@ -1138,13 +1181,13 @@ function startEdit(a) {
   const onBlur = () => {
     d.removeEventListener('input', onInput); d.removeEventListener('blur', onBlur);
     d.classList.remove('editing'); d.contentEditable = 'false'; d.setAttribute('role', 'group'); d.removeAttribute('aria-multiline'); getSelection().removeAllRanges();
-    if (!a.text.trim()) { if (ed && ed.p.annots.includes(a)) removeAnnot(a); } else d.setAttribute('aria-label', labelFor(a));
+    if (!a.text.trim()) { if (ed) removeAnnot(a); } else d.setAttribute('aria-label', labelFor(a));
   };
   d.addEventListener('input', onInput); d.addEventListener('blur', onBlur);
 }
 function drag(e, onMove) {
-  document.body.classList.add('dragging'); const sx = e.clientX, sy = e.clientY;
-  const mv = ev => onMove((ev.clientX - sx) / ed.k, (ev.clientY - sy) / ed.k);
+  document.body.classList.add('dragging'); const sx = e.clientX, sy = e.clientY, k = ed.k;
+  const mv = ev => onMove((ev.clientX - sx) / k, (ev.clientY - sy) / k);
   const up = () => { document.body.classList.remove('dragging'); window.removeEventListener('pointermove', mv); window.removeEventListener('pointerup', up); window.removeEventListener('pointercancel', up); };
   window.addEventListener('pointermove', mv); window.addEventListener('pointerup', up); window.addEventListener('pointercancel', up);
 }
@@ -1160,7 +1203,7 @@ function startResize(a, e) {
 function addAnnot(a) { a.a = a.a || 0; ed.p.annots.push(a); buildEl(a); select(a); return a; }
 const evPt = e => { const r = E.ov.getBoundingClientRect(); return [(e.clientX - r.left) / ed.k, (e.clientY - r.top) / ed.k]; };
 
-E.ov.addEventListener('pointerdown', e => {
+function ovDown(e) {
   if (e.target !== E.ov) return;
   const [x, y] = evPt(e);
   if (ed.tool === 'select') { select(null); return; }
@@ -1176,7 +1219,7 @@ E.ov.addEventListener('pointerdown', e => {
     const fin = () => { window.removeEventListener('pointerup', fin); if (a.w < 4 || a.h < 4) removeAnnot(a); };
     window.addEventListener('pointerup', fin);
   }
-});
+}
 E.fs.addEventListener('input', () => { const a = ed && ed.sel; if (a && a.type === 'text') { a.size = Math.max(6, Math.min(120, Number(E.fs.value) || 14)); placeEl(a); measure(a); } });
 E.tc.addEventListener('input', () => { const a = ed && ed.sel; if (a && a.type === 'text') a.el.style.color = a.color = E.tc.value; });
 const stepFs = d => { E.fs.value = Math.max(6, Math.min(120, (Number(E.fs.value) || 14) + d)); E.fs.dispatchEvent(new Event('input', { bubbles: true })); };
@@ -1185,9 +1228,11 @@ $('#fsDown').onclick = () => stepFs(-1); $('#fsUp').onclick = () => stepFs(1);
 // images
 const dataToBytes = url => { const b = atob(url.split(',')[1]), u = new Uint8Array(b.length); for (let i = 0; i < b.length; i++) u[i] = b.charCodeAt(i); return u; };
 function placeImage(bytes, mime, w, h) {
-  const ds = dispSize(ed.p), W = Math.min(ds.w * 0.45, 260), H = W * h / w;
+  const ds = dispSize(ed.p), W = Math.min(ds.w * 0.45, 260), H = W * h / w, v = edViews.get(ed.p);
   const url = URL.createObjectURL(new Blob([bytes], { type: mime }));
-  addAnnot({ type: 'image', px: (ds.w - W) / 2, py: (ds.h - H) / 2, w: W, h: H, data: { bytes, mime, url } });
+  const vis = (E.stage.scrollTop + E.stage.clientHeight / 2 - v.box.offsetTop) / ed.k;
+  const cy = Math.max(H / 2, Math.min(ds.h - H / 2, vis));
+  addAnnot({ type: 'image', px: (ds.w - W) / 2, py: cy - H / 2, w: W, h: H, data: { bytes, mime, url } });
   setTool('select');
 }
 $('#edImg').onclick = () => $('#imgIn').click();
@@ -1206,11 +1251,24 @@ const pad = $('#sigPad'), pctx = pad.getContext('2d'); let drawing = false, inke
 function padPt(e) { const r = pad.getBoundingClientRect(); return [(e.clientX - r.left) * pad.width / r.width, (e.clientY - r.top) * pad.height / r.height]; }
 pad.addEventListener('pointerdown', e => { if (sigMode !== 'draw') return; e.preventDefault(); pad.setPointerCapture(e.pointerId); drawing = true; last = padPt(e); pctx.beginPath(); pctx.arc(last[0], last[1], 2.5, 0, 7); pctx.fillStyle = '#10141f'; pctx.fill(); inked = true; });
 pad.addEventListener('pointermove', e => { if (!drawing) return; const p = padPt(e); pctx.strokeStyle = '#10141f'; pctx.lineWidth = 5; pctx.lineCap = pctx.lineJoin = 'round'; pctx.beginPath(); pctx.moveTo(last[0], last[1]); pctx.lineTo(p[0], p[1]); pctx.stroke(); last = p; });
-['pointerup', 'pointercancel'].forEach(t => pad.addEventListener(t, () => { drawing = false; }));
+['pointerup', 'pointercancel'].forEach(t => pad.addEventListener(t, () => { if (drawing && sigMode === 'draw') sigStore(); drawing = false; }));
+// the drawn signature is kept in this browser after every stroke, so closing the box or reloading does not lose it
+const SIG_KEY = 'asc_pdf_signature';
+function sigStore() { try { localStorage.setItem(SIG_KEY, pad.toDataURL('image/png')); } catch {} }
+function sigRestore() {
+  let url = null; try { url = localStorage.getItem(SIG_KEY); } catch {}
+  $('#sigSaved').hidden = !url; if (!url) return;
+  const im = new Image();
+  im.onload = () => { if (sigMode !== 'draw' || inked) return; pctx.clearRect(0, 0, pad.width, pad.height); pctx.drawImage(im, 0, 0, pad.width, pad.height); inked = true; };
+  im.src = url;
+}
 function openSig() { sigSet('draw'); $('#sigDlg').hidden = false; $('#sigOk').focus(); }
 function closeSig() { $('#sigDlg').hidden = true; $('#edSign').focus(); }
 $('#edSign').onclick = openSig; $('#sigCancel').onclick = closeSig;
-$('#sigClear').onclick = () => { pctx.clearRect(0, 0, pad.width, pad.height); inked = false; $('#sigText').value = ''; };
+$('#sigClear').onclick = () => {
+  pctx.clearRect(0, 0, pad.width, pad.height); inked = false; $('#sigText').value = '';
+  if (sigMode === 'draw') { try { localStorage.removeItem(SIG_KEY); } catch {} $('#sigSaved').hidden = true; }
+};
 $('#sigOk').onclick = () => {
   if (!inked) { toast(sigMode === 'type' ? 'Type your name first.' : sigMode === 'up' ? 'Choose a picture first.' : 'Draw your signature first.'); return; }
   const d = pctx.getImageData(0, 0, pad.width, pad.height).data; let x0 = pad.width, y0 = pad.height, x1 = 0, y1 = 0;
@@ -1228,7 +1286,9 @@ function sigSet(m) {
   document.querySelectorAll('[data-sig]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.sig === m)));
   $('#sigTypeRow').hidden = m !== 'type'; $('#sigUpRow').hidden = m !== 'up'; pad.style.cursor = m === 'draw' ? 'crosshair' : 'default';
   $('#sigH').textContent = m === 'draw' ? 'Draw Your Signature' : m === 'type' ? 'Type Your Signature' : 'Upload Your Signature';
+  $('#sigSaved').hidden = true;
   if (m === 'type') { $('#sigText').focus(); sigType(); }
+  if (m === 'draw') sigRestore();
 }
 function sigType() {
   pctx.clearRect(0, 0, pad.width, pad.height); const t = $('#sigText').value.trim(); inked = !!t; if (!t) return;
