@@ -749,13 +749,34 @@ async function renderTo(p, canvas, scale) {
     ctx.drawImage(p.src.bitmap, -p.base.W * scale / 2, -p.base.H * scale / 2, p.base.W * scale, p.base.H * scale); ctx.restore();
   }
 }
-async function drawPage(p, canvas, cssW) {
+async function drawPage(p, canvas, cssW, withEdits = false) {
   const tok = (canvas._tok = (canvas._tok || 0) + 1);
-  const tmp = document.createElement('canvas');
-  await renderTo(p, tmp, cssW * dpr() / dispSize(p).w);
+  const tmp = document.createElement('canvas'), scale = cssW * dpr() / dispSize(p).w;
+  await renderTo(p, tmp, scale);
+  if (withEdits) await paintEdits(tmp.getContext('2d'), p, scale);
   if (canvas._tok !== tok) return;
   canvas.width = tmp.width; canvas.height = tmp.height; canvas.getContext('2d').drawImage(tmp, 0, 0);
 }
+
+// Paints a page's edits (text, highlights, whiteout, images and signatures) onto a canvas, the same way the editor shows them.
+// k is canvas pixels per page point. Used for the page previews.
+const imgOf = data => data._img || (data._img = new Promise((ok, no) => { const im = new Image(); im.onload = () => ok(im); im.onerror = no; im.src = data.url; }));
+async function paintEdits(ctx, p, k) {
+  for (const a of p.annots) {
+    const im = a.type === 'image' ? await imgOf(a.data).catch(() => null) : null;
+    ctx.save(); ctx.translate(a.px * k, a.py * k); ctx.rotate((a.a || 0) * Math.PI / 180);
+    if (a.type === 'highlight') { ctx.fillStyle = 'rgba(255,226,0,.4)'; ctx.fillRect(0, 0, a.w * k, a.h * k); }
+    else if (a.type === 'whiteout') { ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, a.w * k, a.h * k); }
+    else if (im) ctx.drawImage(im, 0, 0, a.w * k, a.h * k);
+    else if (a.type === 'text' && a.text) {
+      ctx.fillStyle = a.color; ctx.textBaseline = 'alphabetic'; ctx.font = `${a.size * k}px Helvetica,Arial,"Liberation Sans",sans-serif`;
+      a.text.replace(/\t/g, '    ').split('\n').forEach((line, i) => { if (line) ctx.fillText(line, 0, a.size * k * (FS_BASELINE + i * LINE_H)); });
+    }
+    ctx.restore();
+  }
+}
+// a preview is redrawn when the page turns or any of its edits change
+const editKey = p => totalRot(p) + '|' + p.annots.map(a => [a.type, a.px, a.py, a.w, a.h, a.a, a.text, a.size, a.color, a.data && a.data.url].join(',')).join(';');
 
 /* ---------- loading files ---------- */
 async function addFiles(files, opts = {}) {
@@ -818,8 +839,8 @@ function defaultName() {
 const io = new IntersectionObserver(ents => {
   for (const e of ents) if (e.isIntersecting) {
     const p = pageById(+e.target.dataset.id); if (!p) continue;
-    const key = totalRot(p); if (p.thumbKey === key) continue; p.thumbKey = key;
-    drawPage(p, p.thumb, 160).catch(() => { p.thumbKey = null; });
+    const key = editKey(p); if (p.thumbKey === key) continue; p.thumbKey = key;
+    drawPage(p, p.thumb, 160, true).catch(() => { p.thumbKey = null; });
   }
 }, { rootMargin: '400px' });
 
