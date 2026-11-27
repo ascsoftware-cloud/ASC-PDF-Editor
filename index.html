@@ -155,7 +155,7 @@ footer a{color:inherit}
 .toast button:focus-visible{outline-color:#9be3c4}
 /* editor */
 .editor{position:fixed;inset:0;background:var(--editor-bg);z-index:50;display:flex;flex-direction:column}
-.ed-stage{position:relative;flex:1;overflow:auto;overscroll-behavior:contain;padding:16px 12px 40px}
+.ed-stage{position:relative;flex:1;overflow:auto;overscroll-behavior:contain;padding:16px 12px 90px}
 .pagebox{position:relative;margin:0 auto 16px;background:#fff;box-shadow:0 2px 14px rgba(0,0,0,.25)}
 .pagebox canvas{position:absolute;inset:0;width:100%;height:100%}
 .overlay{position:absolute;inset:0;overflow:hidden}
@@ -290,6 +290,22 @@ a.btn{text-decoration:none}
 .swatch::-moz-color-swatch{border:0;border-radius:50%}
 .ed-pager{display:flex;align-items:center;gap:6px;margin-left:auto}
 .ed-pager strong{font-size:14px;min-width:84px;text-align:center;font-variant-numeric:tabular-nums}
+.ed-zoombar{position:absolute;right:max(14px,env(safe-area-inset-right));bottom:calc(14px + env(safe-area-inset-bottom));z-index:3;display:flex;align-items:center;gap:2px;padding:4px;background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:0 8px 28px rgba(0,0,0,.3)}
+.ed-zoombar button{width:34px;height:34px;border:0;border-radius:10px;background:transparent;color:var(--ink);display:grid;place-items:center;cursor:pointer;touch-action:manipulation}
+.ed-zoombar button:hover:not(:disabled){background:var(--accent-soft)}
+.ed-zoombar button:disabled{opacity:.35;cursor:default}
+.ed-zoombar svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round}
+.ed-zoombar select{height:34px;min-width:76px;margin-left:4px;border:1px solid var(--line);border-radius:10px;background:var(--raise);color:var(--ink);font:inherit;font-size:13px;font-weight:600;font-variant-numeric:tabular-nums;padding:0 6px;cursor:pointer}
+.zslider{-webkit-appearance:none;appearance:none;width:150px;height:30px;margin:0 4px;background:transparent;cursor:pointer;--fill:50%}
+.zslider::-webkit-slider-runnable-track{height:4px;border-radius:4px;background:linear-gradient(to right,var(--accent-fg) var(--fill),var(--line) var(--fill))}
+.zslider::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;margin-top:-6px;border-radius:50%;background:var(--accent);border:2px solid var(--surface);box-shadow:0 1px 5px rgba(0,0,0,.45)}
+.zslider::-moz-range-track{height:4px;border-radius:4px;background:var(--line)}
+.zslider::-moz-range-progress{height:4px;border-radius:4px;background:var(--accent-fg)}
+.zslider::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:var(--accent);border:2px solid var(--surface);box-shadow:0 1px 5px rgba(0,0,0,.45)}
+.zslider:focus-visible{outline:none}
+.zslider:focus-visible::-webkit-slider-thumb{outline:2px solid var(--accent-fg);outline-offset:2px}
+@media (pointer:fine){.ed-zoombar{right:26px;bottom:26px}}
+@media (pointer:coarse){.zslider::-webkit-slider-thumb{width:22px;height:22px;margin-top:-9px}.zslider::-moz-range-thumb{width:20px;height:20px}}
 .ed-pager .tbtn{min-width:40px;padding:0;border-color:var(--line);background:var(--surface)}
 @media (max-width:720px){
   .ed-bar{gap:8px}
@@ -301,6 +317,8 @@ a.btn{text-decoration:none}
   .ed-del span{display:none}
   .ed-pager{order:2}
   .ed-pager strong{min-width:0;font-size:13px}
+  .zslider{width:96px}
+  .ed-zoombar select{min-width:66px}
 }
 /* accounts */
 .seg{display:flex;gap:6px;margin:10px 0}
@@ -471,6 +489,14 @@ a.btn{text-decoration:none}
     </div>
   </div>
   <div class="ed-stage" id="edStage"></div>
+  <div class="ed-zoombar" role="group" aria-label="Page size">
+    <button type="button" id="zoomOut" aria-label="Make pages smaller" title="Smaller (Ctrl −)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12"/></svg></button>
+    <input type="range" id="zoomSlider" class="zslider" min="0" max="1000" step="1" value="500" aria-label="Page size">
+    <button type="button" id="zoomIn" aria-label="Make pages bigger" title="Bigger (Ctrl +)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6v12M6 12h12"/></svg></button>
+    <select id="zoomSel" aria-label="Page size" name="zoom" title="Page size">
+      <option value="fit">Fit</option><option value="50">50%</option><option value="75">75%</option><option value="100">100%</option><option value="125">125%</option><option value="150">150%</option><option value="200">200%</option><option value="300">300%</option><option value="400">400%</option>
+    </select>
+  </div>
   <p class="sr" id="edHelp">Drag items to move them. With an item focused, use the arrow keys to nudge, Enter to edit text and Delete to remove it.</p>
 </div>
 
@@ -1039,11 +1065,14 @@ $('#dlSel').onclick = () => exportPages(st.pages.filter(p => p.selected));
 // Every page is laid out in one scrolling column. E.ov and ed.k always point at the "current" page:
 // the one the person last touched, or the one in the middle of the screen while scrolling.
 const E = { stage: $('#edStage'), ov: null, fs: $('#fs'), tc: $('#tc') };
-let lastFocus = null, edViews = new Map(), edObs = null;
+let lastFocus = null, edViews = new Map(), edObs = null, ed0zoom = 'fit';
+// Page size, like Word or Acrobat: 'fit' fills the window width, a number is a percentage of the page's real size (96 dpi)
+const ZOOMS = [50, 75, 100, 125, 150, 200, 300, 400], realW = p => dispSize(p).w * 4 / 3;
+const fitW = () => Math.max(240, Math.min(920, window.innerWidth - 24));
 
 async function openEditor(p, opener) {
   lastFocus = opener || document.activeElement;
-  ed = { p, tool: 'select', sel: null, k: 1 };
+  ed = { p, tool: 'select', sel: null, k: 1, zoom: ed0zoom };
   $('#main').inert = true; $('header.top').inert = true; $('#editor').hidden = false; document.body.style.overflow = 'hidden';
   layoutEditor(); setTool('select'); scrollToPage(p, 'auto'); $('#edDone').focus();
 }
@@ -1064,11 +1093,13 @@ function setCur(p) {
 function layoutEditor() {
   if (edObs) edObs.disconnect();
   edViews.clear(); E.stage.textContent = '';
-  const cssW = ed.cssW = Math.max(240, Math.min(920, window.innerWidth - 24));
+  const cur = st.pages.includes(ed.p) ? ed.p : st.pages[0];
+  const cssW = ed.cssW = ed.zoom === 'fit' ? fitW() : Math.round(realW(cur) * ed.zoom / 100);
+  const drawW = Math.min(cssW, 3000 / dpr()); // very large sizes are drawn at a capped sharpness to save memory
   // pages are drawn only while near the screen, and let go of when far away, so long documents stay light
   edObs = new IntersectionObserver(entries => entries.forEach(en => {
     const v = en.target._view; if (!v) return;
-    if (en.isIntersecting) { if (!v.drawn) { v.drawn = true; drawPage(v.p, v.canvas, cssW); } }
+    if (en.isIntersecting) { if (!v.drawn) { v.drawn = true; drawPage(v.p, v.canvas, drawW); } }
     else if (v.drawn) { v.drawn = false; v.canvas._tok = (v.canvas._tok || 0) + 1; v.canvas.width = v.canvas.height = 0; }
   }), { root: E.stage, rootMargin: '1200px 0px' });
   st.pages.forEach((p, i) => {
@@ -1083,9 +1114,60 @@ function layoutEditor() {
     setCur(p); p.annots.forEach(buildEl);
     edObs.observe(box);
   });
-  if (!st.pages.includes(ed.p)) ed.p = st.pages[0];
-  setCur(ed.p); select(null);
+  setCur(cur); select(null); syncZoom();
 }
+function curPct() { return Math.round(ed.cssW / realW(ed.p) * 100); }
+function syncZoom() {
+  const sel = $('#zoomSel'), pct = curPct();
+  let o = $('option[data-custom]', sel);
+  if (ed.zoom === 'fit') { if (o) o.remove(); sel.value = 'fit'; $('option[value="fit"]', sel).textContent = `Fit ${pct}%`; }
+  else if (ZOOMS.includes(ed.zoom)) { if (o) o.remove(); sel.value = String(ed.zoom); $('option[value="fit"]', sel).textContent = 'Fit'; }
+  else { if (!o) { o = document.createElement('option'); o.dataset.custom = '1'; sel.prepend(o); } o.value = String(ed.zoom); o.textContent = ed.zoom + '%'; sel.value = o.value; }
+  $('#zoomOut').disabled = pct <= ZOOMS[0]; $('#zoomIn').disabled = pct >= ZOOMS[ZOOMS.length - 1];
+  const sl = $('#zoomSlider'); if (!zDragging) sl.value = pctToSlider(pct);
+  sl.style.setProperty('--fill', sl.value / 10 + '%'); sl.setAttribute('aria-valuetext', pct + '%');
+}
+// the slider runs 50% to 400% on a log scale, so each step feels the same at small and large sizes
+const ZMIN = 50, ZMAX = 400, pctToSlider = p => Math.round(1000 * Math.log(Math.max(ZMIN, Math.min(ZMAX, p)) / ZMIN) / Math.log(ZMAX / ZMIN));
+const sliderToPct = v => ZMIN * Math.pow(ZMAX / ZMIN, v / 1000);
+let zDragging = false, zRaf = 0;
+$('#zoomSlider').addEventListener('input', e => {
+  zDragging = true; e.target.style.setProperty('--fill', e.target.value / 10 + '%');
+  if (zRaf) return;
+  zRaf = requestAnimationFrame(() => { zRaf = 0; let p = sliderToPct(Number($('#zoomSlider').value)); if (Math.abs(p - 100) < 4) p = 100; setZoom(p); });
+});
+$('#zoomSlider').addEventListener('change', () => { zDragging = false; if (ed) syncZoom(); });
+// change the page size and keep the same spot of the same page on screen
+function setZoom(z) {
+  if (!ed) return;
+  if (z !== 'fit') z = Math.max(ZOOMS[0], Math.min(ZOOMS[ZOOMS.length - 1], Math.round(z)));
+  const v = edViews.get(ed.p), S = E.stage;
+  const fy = v ? (S.scrollTop + S.clientHeight / 2 - v.box.offsetTop) / v.box.offsetHeight : 0;
+  const fx = S.scrollWidth > S.clientWidth ? (S.scrollLeft + S.clientWidth / 2) / S.scrollWidth : 0.5;
+  const p = ed.p, sel = ed.sel; ed.zoom = ed0zoom = z; layoutEditor(); setTool(ed.tool);
+  const nv = edViews.get(p);
+  if (nv) { S.scrollTop = nv.box.offsetTop + fy * nv.box.offsetHeight - S.clientHeight / 2; setCur(p); }
+  S.scrollLeft = fx * S.scrollWidth - S.clientWidth / 2;
+  if (sel && sel.el) select(sel);
+}
+function stepZoom(dir) {
+  const pct = curPct();
+  const next = dir > 0 ? ZOOMS.find(z => z > pct + 1) : [...ZOOMS].reverse().find(z => z < pct - 1);
+  if (next) setZoom(next);
+}
+$('#zoomIn').onclick = () => stepZoom(1); $('#zoomOut').onclick = () => stepZoom(-1);
+$('#zoomSel').onchange = e => setZoom(e.target.value === 'fit' ? 'fit' : Number(e.target.value));
+// Ctrl + mouse wheel and trackpad pinch resize the pages smoothly
+E.stage.addEventListener('wheel', e => {
+  if (!ed || !e.ctrlKey) return; e.preventDefault();
+  setZoom(curPct() * Math.exp(-e.deltaY * 0.0025));
+}, { passive: false });
+document.addEventListener('keydown', e => {
+  if (!ed || !(e.ctrlKey || e.metaKey) || !$('#sigDlg').hidden) return;
+  if (e.key === '=' || e.key === '+') { e.preventDefault(); stepZoom(1); }
+  else if (e.key === '-') { e.preventDefault(); stepZoom(-1); }
+  else if (e.key === '0') { e.preventDefault(); setZoom('fit'); }
+});
 function scrollToPage(p, behavior = 'smooth') {
   const v = edViews.get(p); if (!v) return;
   E.stage.scrollTo({ top: v.box.offsetTop - 16, behavior }); setCur(p);
@@ -1107,7 +1189,8 @@ $('#edPrev').onclick = () => go(-1); $('#edNext').onclick = () => go(1); $('#edD
   const stage = $('#edStage'); let s = null;
   stage.addEventListener('touchstart', e => {
     const zoomed = window.visualViewport && window.visualViewport.scale > 1.05;
-    if (!ed || ed.tool !== 'select' || e.touches.length !== 1 || zoomed || e.target.closest('.ann')) { s = null; return; }
+    const wide = stage.scrollWidth > stage.clientWidth + 2;
+    if (!ed || ed.tool !== 'select' || e.touches.length !== 1 || zoomed || wide || e.target.closest('.ann')) { s = null; return; }
     s = { x: e.touches[0].clientX, y: e.touches[0].clientY, t: e.timeStamp };
   }, { passive: true });
   stage.addEventListener('touchend', e => {
